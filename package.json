@@ -1,0 +1,53 @@
+{
+    "name": "sillytavern-utils-lib",
+    "version": "1.0.1",
+    "description": "Utility library for SillyTavern",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./config": {
+            "types": "./dist/config.d.ts",
+            "default": "./dist/config.js"
+        },
+        "./prompt-builder": {
+            "types": "./dist/prompt-builder.d.ts",
+            "default": "./dist/prompt-builder.js"
+        },
+        "./types": {
+            "types": "./dist/types/index.d.ts",
+            "default": "./dist/types/index.js"
+        },
+        "./types/popup": {
+            "types": "./dist/types/popup.d.ts",
+            "default": "./dist/types/popup.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "test": "jest",
+        "prepare": "npm run build",
+        "prettify": "prettier --write \"src/**/*.ts\""
+    },
+    "keywords": [
+        "sillytavern",
+        "utils",
+        "library"
+    ],
+    "author": "bmen25124",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "@types/jquery": "^3.5.32",
+        "@types/node": "^22.13.1",
+        "jest": "^29.7.0",
+        "prettier": "^3.4.2",
+        "ts-jest": "^29.2.5",
+        "typescript": "^5.7.3"
+    }
+}
