@@ -155,6 +155,7 @@ export interface SillyTavernContext {
   powerUserSettings: {
     persona_description_position: number;
     persona_description: string;
+    prefer_character_prompt: boolean;
   };
   getWorldInfoPrompt: (chat: string[], maxContext: number, isDryRun: boolean) => Promise<WIPromptResult>;
   ToolManager: {
@@ -210,7 +211,7 @@ export interface SillyTavernContext {
   ): void;
   saveChat: () => Promise<void>;
   getPresetManager: (apiId?: string) => {
-    getCompletionPresetByName(name: string): undefined | any | ChatCompletionPreset;
+    getCompletionPresetByName(name?: string): undefined | any | ChatCompletionPreset;
   };
   substituteParams: (
     content: string,

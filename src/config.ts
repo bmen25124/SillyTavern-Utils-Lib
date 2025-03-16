@@ -23,7 +23,7 @@ import {
 import { world_info_include_names, wi_anchor_position } from '../../../../world-info.js';
 
 // @ts-ignore
-import { formatInstructModeExamples } from '../../../../instruct-mode.js';
+import { formatInstructModeExamples, formatInstructModeSystemPrompt } from '../../../../instruct-mode.js';
 
 // @ts-ignore
 import { appendFileContent } from '../../../../chats.js';
@@ -46,6 +46,7 @@ import { getGroupDepthPrompts, selected_group } from '../../../../group-chats.js
 
 // @ts-ignore
 import { regex_placement, getRegexedString } from '../../../regex/engine.js';
+import { InstructSettings } from './types/instruct.js';
 
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -71,8 +72,21 @@ export function st_formatInstructModeExamples(mesExamplesArray: string[], name1:
   return formatInstructModeExamples(mesExamplesArray, name1, name2);
 }
 
-export function st_renderStoryString(params: object): string {
-  return renderStoryString(params);
+export function st_formatInstructModeSystemPrompt(systemPrompt: string, customInstruct?: InstructSettings): string {
+  return formatInstructModeSystemPrompt(systemPrompt, customInstruct);
+}
+
+export function st_renderStoryString(
+  params: object,
+  {
+    customStoryString,
+    customInstructSettings,
+  }: {
+    customStoryString?: string;
+    customInstructSettings?: InstructSettings;
+  } = {},
+): string {
+  return renderStoryString(params, { customStoryString, customInstructSettings });
 }
 
 export function st_getPromptRole(role: number): string {

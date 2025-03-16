@@ -27,22 +27,34 @@ import {
   st_appendFileContent,
   st_formatWorldInfo,
   st_getPromptPosition,
+  st_formatInstructModeSystemPrompt,
 } from './config.js';
 import { ChatCompletionPreset, PromptConfig } from './types/chat-completion.js';
+import { ContextSettings } from './types/context.js';
 import { ChatCompletionMessage } from './types/index.js';
+import { InstructSettings } from './types/instruct.js';
+import { SyspromptSettings } from './types/sysprompt.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
 }
 
+export interface BuildPromptOptions {
+  presetName?: string;
+  instructName?: string;
+  contextName?: string;
+  syspromptName?: string;
+}
+
 /**
- * Builds chat prompt.
- *
- * Text completion doesn't support custom context template and system prompt. (yet)
+ * Builds chat prompt. Don't expect a perfect chat prompt like ST. But I would give guarantee that it will cover 98% of the cases.
  * @param targetMessageIndex - Last message index to include in prompt
- * @param presetName - Name of preset, it is for chat completion
+ * @param [param1={}] - Options
  */
-export async function buildPrompt(targetMessageIndex?: number, presetName?: string): Promise<Message[]> {
+export async function buildPrompt(
+  targetMessageIndex?: number,
+  { presetName, instructName, contextName, syspromptName }: BuildPromptOptions = {},
+): Promise<Message[]> {
   if (!['textgenerationwebui', 'openai'].includes(main_api)) {
     throw new Error('Unsupported API');
   }
@@ -53,7 +65,11 @@ export async function buildPrompt(targetMessageIndex?: number, presetName?: stri
   let { description, personality, persona, scenario, mesExamples, system, jailbreak } =
     context.getCharacterCardFields();
 
-  const isInstruct = main_api === 'textgenerationwebui';
+  const instructPreset =
+    main_api === 'textgenerationwebui'
+      ? (context.getPresetManager('instruct')?.getCompletionPresetByName(instructName) as undefined | InstructSettings)
+      : undefined;
+  const isInstruct = !!instructPreset;
   let mesExamplesArray = st_parseMesExamples(mesExamples, isInstruct);
 
   const this_max_context = st_getMaxContextSize();
@@ -116,6 +132,22 @@ export async function buildPrompt(targetMessageIndex?: number, presetName?: stri
       mesExamplesArray = st_formatInstructModeExamples(mesExamplesArray, name1, name2);
     }
 
+    const syspromptPreset = context.getPresetManager('sysprompt')?.getCompletionPresetByName(syspromptName) as
+      | undefined
+      | SyspromptSettings;
+    if (syspromptPreset) {
+      system =
+        context.powerUserSettings.prefer_character_prompt && system
+          ? system
+          : st_baseChatReplace(syspromptPreset.content, name1, name2);
+      system = isInstruct
+        ? st_formatInstructModeSystemPrompt(
+            context.substituteParams(system, name1, name2, syspromptPreset.content),
+            instructPreset,
+          )
+        : system;
+    }
+
     // Build story string
     const storyStringParams = {
       description: description,
@@ -136,7 +168,13 @@ export async function buildPrompt(targetMessageIndex?: number, presetName?: stri
       mesExamplesRaw: mesExamplesRawArray.join(''),
     };
 
-    let storyString = st_renderStoryString(storyStringParams);
+    const contextPreset = context.getPresetManager('context')?.getCompletionPresetByName(contextName) as
+      | undefined
+      | ContextSettings;
+    let storyString = st_renderStoryString(storyStringParams, {
+      customInstructSettings: instructPreset,
+      customStoryString: contextPreset?.story_string,
+    });
 
     messages.push({ role: 'system', content: storyString, ignoreInstruct: true });
 

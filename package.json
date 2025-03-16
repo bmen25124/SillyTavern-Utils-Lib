@@ -39,6 +39,18 @@
         "./types/chat-completion": {
             "types": "./dist/types/chat-completion.d.ts",
             "default": "./dist/types/chat-completion.js"
+        },
+        "./types/instruct": {
+            "types": "./dist/types/instruct.d.ts",
+            "default": "./dist/types/instruct.js"
+        },
+        "./types/context": {
+            "types": "./dist/types/context.d.ts",
+            "default": "./dist/types/context.js"
+        },
+        "./types/sysprompt": {
+            "types": "./dist/types/sysprompt.d.ts",
+            "default": "./dist/types/sysprompt.js"
         }
     },
     "files": [

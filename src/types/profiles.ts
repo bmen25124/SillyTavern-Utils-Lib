@@ -7,8 +7,10 @@ export interface ConnectionProfile {
   model?: string;
   proxy?: string;
   instruct?: string;
+  'instruct-state'?: string;
   context?: string;
-  instruct_state?: string;
+  sysprompt?: string;
+  'sysprompt-state'?: string;
   tokenizer?: string;
   stop_strings?: string;
   exclude?: string[];
