@@ -4,7 +4,8 @@ import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from './popup.js';
 import { AutoModeOptions } from './translate.js';
 import { ConnectionProfile } from './profiles.js';
 import { WIPromptResult } from './world-info.js';
-import { ChatCompletionPreset } from './chat-completion.js';
+import { ChatCompletionPreset, ChatCompletionSettings } from './chat-completion.js';
+import { TextCompletionPreset } from './text-completion.js';
 
 export enum EventNames {
   APP_READY = 'app_ready',
@@ -103,6 +104,7 @@ export interface ChatMessage {
     append_title?: boolean;
     title?: string;
     isSmallSys?: boolean;
+    token_count?: number;
   } & Record<string, any>;
 }
 
@@ -191,6 +193,8 @@ export interface SillyTavernContext {
       filter?: any;
     }
   >;
+  chatCompletionSettings: ChatCompletionSettings;
+  textCompletionSettings: TextCompletionPreset;
   addOneMessage(
     mes: ChatMessage,
     {
@@ -211,7 +215,7 @@ export interface SillyTavernContext {
   ): void;
   saveChat: () => Promise<void>;
   getPresetManager: (apiId?: string) => {
-    getCompletionPresetByName(name?: string): undefined | any | ChatCompletionPreset;
+    getCompletionPresetByName(name?: string): undefined | TextCompletionPreset | ChatCompletionPreset;
   };
   substituteParams: (
     content: string,

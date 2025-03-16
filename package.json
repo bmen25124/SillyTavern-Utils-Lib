@@ -40,6 +40,10 @@
             "types": "./dist/types/chat-completion.d.ts",
             "default": "./dist/types/chat-completion.js"
         },
+        "./types/text-completion": {
+            "types": "./dist/types/text-completion.d.ts",
+            "default": "./dist/types/text-completion.js"
+        },
         "./types/instruct": {
             "types": "./dist/types/instruct.d.ts",
             "default": "./dist/types/instruct.js"

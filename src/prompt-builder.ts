@@ -21,7 +21,6 @@ import {
   st_prepareOpenAIMessages,
   st_setOpenAIMessages,
   st_setOpenAIMessageExamples,
-  main_api,
   regex_placement,
   st_getRegexedString,
   st_appendFileContent,
@@ -34,6 +33,7 @@ import { ContextSettings } from './types/context.js';
 import { ChatCompletionMessage } from './types/index.js';
 import { InstructSettings } from './types/instruct.js';
 import { SyspromptSettings } from './types/sysprompt.js';
+import { TextCompletionPreset } from './types/text-completion.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
@@ -44,6 +44,7 @@ export interface BuildPromptOptions {
   instructName?: string;
   contextName?: string;
   syspromptName?: string;
+  maxContext?: number;
 }
 
 /**
@@ -52,10 +53,11 @@ export interface BuildPromptOptions {
  * @param [param1={}] - Options
  */
 export async function buildPrompt(
+  api: string,
   targetMessageIndex?: number,
-  { presetName, instructName, contextName, syspromptName }: BuildPromptOptions = {},
+  { presetName, instructName, contextName, syspromptName, maxContext }: BuildPromptOptions = {},
 ): Promise<Message[]> {
-  if (!['textgenerationwebui', 'openai'].includes(main_api)) {
+  if (!['textgenerationwebui', 'openai'].includes(api)) {
     throw new Error('Unsupported API');
   }
 
@@ -66,13 +68,37 @@ export async function buildPrompt(
     context.getCharacterCardFields();
 
   const instructPreset =
-    main_api === 'textgenerationwebui'
+    api === 'textgenerationwebui'
       ? (context.getPresetManager('instruct')?.getCompletionPresetByName(instructName) as undefined | InstructSettings)
       : undefined;
-  const isInstruct = !!instructPreset;
+  const isInstruct = !!instructPreset?.enabled;
   let mesExamplesArray = st_parseMesExamples(mesExamples, isInstruct);
 
-  const this_max_context = st_getMaxContextSize();
+  function getMaxContext(): number {
+    if (maxContext) {
+      return maxContext;
+    }
+
+    let response: number | undefined;
+    if (presetName) {
+      if (api === 'textgenerationwebui') {
+        const preset = context.getPresetManager('textgenerationwebui')?.getCompletionPresetByName(presetName) as
+          | TextCompletionPreset
+          | undefined;
+        response = preset?.max_length;
+      } else {
+        const preset = context.getPresetManager('openai')?.getCompletionPresetByName(presetName) as
+          | ChatCompletionPreset
+          | undefined;
+        response = preset?.openai_max_context;
+      }
+    }
+
+    return response ?? st_getMaxContextSize();
+  }
+
+  const currentMaxContext = getMaxContext();
+
   const canUseTools = context.ToolManager.isToolCallingSupported();
   let coreChat = context.chat
     .slice(0, targetMessageIndex ? targetMessageIndex + 1 : undefined)
@@ -102,7 +128,7 @@ export async function buildPrompt(
 
   const chatForWI = coreChat.map((x) => (world_info_include_names ? `${x.name}: ${x.mes}` : x.mes)).reverse();
   const { worldInfoString, worldInfoBefore, worldInfoAfter, worldInfoExamples, worldInfoDepth, anBefore, anAfter } =
-    await context.getWorldInfoPrompt(chatForWI, this_max_context, false);
+    await context.getWorldInfoPrompt(chatForWI, currentMaxContext, false);
 
   // Add message example WI
   for (const example of worldInfoExamples) {
@@ -123,7 +149,7 @@ export async function buildPrompt(
     }
   }
 
-  const textCompletion = main_api === 'textgenerationwebui';
+  const textCompletion = api === 'textgenerationwebui';
   if (textCompletion) {
     // At this point, the raw message examples can be created
     const mesExamplesRawArray = [...mesExamplesArray];
