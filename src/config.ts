@@ -33,6 +33,8 @@ import {
   prepareOpenAIMessages,
   setOpenAIMessages,
   setOpenAIMessageExamples,
+  formatWorldInfo,
+  getPromptPosition,
   // @ts-ignore
 } from '../../../../openai.js';
 
@@ -192,6 +194,21 @@ export function st_getRegexedString(
 
 export async function st_appendFileContent(message: object, messageText: string): Promise<string> {
   return await appendFileContent(message, messageText);
+}
+
+export function st_formatWorldInfo(
+  value: string,
+  {
+    wiFormat,
+  }: {
+    wiFormat?: string;
+  } = {},
+): string {
+  return formatWorldInfo(value, { wiFormat });
+}
+
+export function st_getPromptPosition(position: number): string | false {
+  return getPromptPosition(position);
 }
 
 export {

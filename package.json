@@ -35,6 +35,10 @@
         "./types/world-info": {
             "types": "./dist/types/world-info.d.ts",
             "default": "./dist/types/world-info.js"
+        },
+        "./types/chat-completion": {
+            "types": "./dist/types/chat-completion.d.ts",
+            "default": "./dist/types/chat-completion.js"
         }
     },
     "files": [

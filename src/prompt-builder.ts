@@ -25,7 +25,10 @@ import {
   regex_placement,
   st_getRegexedString,
   st_appendFileContent,
+  st_formatWorldInfo,
+  st_getPromptPosition,
 } from './config.js';
+import { ChatCompletionPreset, PromptConfig } from './types/chat-completion.js';
 import { ChatCompletionMessage } from './types/index.js';
 
 export interface Message extends ChatCompletionMessage {
@@ -33,21 +36,19 @@ export interface Message extends ChatCompletionMessage {
 }
 
 /**
- * Text completion supported: Handles system message (description, scenario, etc.), chat history, world info, author note, char note
+ * Builds chat prompt.
  *
- * Text completion not supported: extensionPrompt, summarize
- *
- * Chat completion supported: All (i guess)
+ * Text completion doesn't support custom context template and system prompt. (yet)
+ * @param targetMessageIndex - Last message index to include in prompt
+ * @param presetName - Name of preset, it is for chat completion
  */
-export async function buildPrompt(targetMessageIndex: number): Promise<Message[]> {
+export async function buildPrompt(targetMessageIndex?: number, presetName?: string): Promise<Message[]> {
   if (!['textgenerationwebui', 'openai'].includes(main_api)) {
     throw new Error('Unsupported API');
   }
 
   const context = SillyTavern.getContext();
   let messages: Message[] = [];
-
-  const chat = context.chat.slice(0, targetMessageIndex + 1);
 
   let { description, personality, persona, scenario, mesExamples, system, jailbreak } =
     context.getCharacterCardFields();
@@ -57,7 +58,9 @@ export async function buildPrompt(targetMessageIndex: number): Promise<Message[]
 
   const this_max_context = st_getMaxContextSize();
   const canUseTools = context.ToolManager.isToolCallingSupported();
-  let coreChat = chat.filter((x) => !x.is_system || (canUseTools && Array.isArray(x.extra?.tool_invocations)));
+  let coreChat = context.chat
+    .slice(0, targetMessageIndex ? targetMessageIndex + 1 : undefined)
+    .filter((x) => !x.is_system || (canUseTools && Array.isArray(x.extra?.tool_invocations)));
 
   coreChat = await Promise.all(
     coreChat.map(async (chatItem, index) => {
@@ -137,124 +140,307 @@ export async function buildPrompt(targetMessageIndex: number): Promise<Message[]
 
     messages.push({ role: 'system', content: storyString, ignoreInstruct: true });
 
-    chat
-      .filter((message) => !message.is_system)
-      .forEach((message) => {
-        messages.push({
-          role: message.is_user ? 'user' : 'assistant',
-          content: message.mes,
-        });
+    coreChat.forEach((message) => {
+      messages.push({
+        role: message.is_user ? 'user' : 'assistant',
+        content: message.mes,
       });
-
-    // Inject world info depth.
-    for (const worldInfo of worldInfoDepth) {
-      messages = [
-        ...messages.slice(0, messages.length - worldInfo.depth),
-        { role: st_getPromptRole(worldInfo.role), content: worldInfo.entries.join('\n') },
-        ...messages.slice(messages.length - worldInfo.depth),
-      ];
-    }
-
-    const groupDepthPrompts = st_getGroupDepthPrompts(selected_group, Number(this_chid));
-
-    if (selected_group && Array.isArray(groupDepthPrompts) && groupDepthPrompts.length > 0) {
-      groupDepthPrompts.forEach((value, index) => {
-        messages = [
-          ...messages.slice(0, messages.length - value.depth),
-          { role: value.role, content: value.text },
-          ...messages.slice(messages.length - value.depth),
-        ];
-      });
-    } else {
-      const depthPromptText =
-        st_baseChatReplace(characters[this_chid]?.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2) || '';
-      const depthPromptDepth = depth_prompt_depth_default;
-      const depthPromptRole = characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
-
-      messages = [
-        ...messages.slice(0, messages.length - depthPromptDepth),
-        { role: st_getPromptRole(depthPromptRole), content: depthPromptText },
-        ...messages.slice(messages.length - depthPromptDepth),
-      ];
-    }
-
-    // TODO: We should respect interval and world info scanning
-    const authorNote = st_getAuthorNote();
-    let authorNoteIndex = -1;
-    if (authorNote.prompt) {
-      authorNote.prompt = st_baseChatReplace(authorNote.prompt, name1, name2);
-      switch (authorNote.position) {
-        case extension_prompt_types.IN_PROMPT: // After first message
-          messages = [...messages.slice(0, 1), { role: 'user', content: authorNote.prompt }, ...messages.slice(1)];
-          authorNoteIndex = 1;
-          break;
-        case extension_prompt_types.IN_CHAT: // Depth + role in chat
-          messages = [
-            ...messages.slice(0, messages.length - authorNote.depth),
-            { role: st_getPromptRole(authorNote.role), content: authorNote.prompt },
-            ...messages.slice(messages.length - authorNote.depth),
-          ];
-          authorNoteIndex = messages.length - authorNote.depth - 1;
-          break;
-        case extension_prompt_types.BEFORE_PROMPT: // Before first message
-          messages.unshift({ role: 'user', content: authorNote.prompt });
-          authorNoteIndex = 0;
-          break;
-        default:
-          break;
-      }
-    }
-
-    // Add world info to author note
-    if (authorNoteIndex >= 0) {
-      if (anBefore.length > 0) {
-        messages = [
-          ...messages.slice(0, authorNoteIndex),
-          { role: 'system', content: anBefore.join('\n') },
-          ...messages.slice(authorNoteIndex),
-        ];
-        authorNoteIndex++;
-      }
-
-      if (anAfter.length > 0) {
-        messages = [
-          ...messages.slice(0, authorNoteIndex + 1),
-          { role: 'system', content: anAfter.join('\n') },
-          ...messages.slice(authorNoteIndex + 1),
-        ];
-      }
-    }
+    });
   } else {
-    let oaiMessages = [];
-    let oaiMessageExamples = [];
+    let oaiMessages = st_setOpenAIMessages(coreChat);
+    let oaiMessageExamples = st_setOpenAIMessageExamples(mesExamplesArray);
 
-    oaiMessages = st_setOpenAIMessages(coreChat);
-    oaiMessageExamples = st_setOpenAIMessageExamples(mesExamplesArray);
+    async function addDefaultPreset() {
+      let [prompt, _counts] = await st_prepareOpenAIMessages(
+        {
+          name2: name2,
+          charDescription: description,
+          charPersonality: personality,
+          Scenario: scenario,
+          worldInfoBefore: worldInfoBefore,
+          worldInfoAfter: worldInfoAfter,
+          extensionPrompts: context.extensionPrompts,
+          bias: '',
+          type: 'normal',
+          quietPrompt: undefined,
+          quietImage: undefined,
+          cyclePrompt: '',
+          systemPromptOverride: system,
+          jailbreakPromptOverride: jailbreak,
+          personaDescription: persona,
+          messages: oaiMessages,
+          messageExamples: oaiMessageExamples,
+        },
+        false,
+      );
 
-    let [prompt, _counts] = await st_prepareOpenAIMessages(
+      messages.push(...prompt);
+    }
+
+    if (!presetName) {
+      await addDefaultPreset();
+      return messages;
+    }
+
+    const preset = context.getPresetManager('openai')?.getCompletionPresetByName(presetName) as
+      | ChatCompletionPreset
+      | undefined;
+    if (!preset) {
+      console.warn(`Preset not found: ${presetName}. Using current preset.`);
+      addDefaultPreset();
+      return messages;
+    }
+
+    let promptOrder = preset.prompt_order.find((prompt) => prompt.character_id === this_chid);
+    if (!promptOrder && preset.prompt_order.length > 0) {
+      promptOrder = preset.prompt_order[0];
+    }
+    if (!promptOrder) {
+      console.warn(`No prompt order found for preset: ${presetName}. Using current preset.`);
+      addDefaultPreset();
+      return messages;
+    }
+
+    const scenarioText = scenario && preset.scenario_format ? context.substituteParams(preset.scenario_format) : '';
+    const charPersonalityText =
+      personality && preset.personality_format ? context.substituteParams(preset.personality_format) : '';
+    const groupNudge = context.substituteParams(preset.group_nudge_prompt);
+    const impersonationPrompt = preset.impersonation_prompt
+      ? context.substituteParams(preset.impersonation_prompt)
+      : '';
+
+    // Create entries for system prompts
+    const systemPrompts: (PromptConfig & { position?: string | boolean })[] = [
+      // Ordered prompts for which a marker should exist
       {
-        name2: name2,
-        charDescription: description,
-        charPersonality: personality,
-        Scenario: scenario,
-        worldInfoBefore: worldInfoBefore,
-        worldInfoAfter: worldInfoAfter,
-        extensionPrompts: context.extensionPrompts,
-        bias: '',
-        type: 'normal',
-        quietPrompt: undefined,
-        quietImage: undefined,
-        cyclePrompt: '',
-        systemPromptOverride: system,
-        jailbreakPromptOverride: jailbreak,
-        personaDescription: persona,
-        messages: oaiMessages,
-        messageExamples: oaiMessageExamples,
+        role: 'system',
+        content: st_formatWorldInfo(worldInfoBefore, { wiFormat: preset.wi_format }),
+        identifier: 'worldInfoBefore',
       },
-      false,
-    );
+      {
+        role: 'system',
+        content: st_formatWorldInfo(worldInfoAfter, { wiFormat: preset.wi_format }),
+        identifier: 'worldInfoAfter',
+      },
+      { role: 'system', content: description, identifier: 'charDescription' },
+      { role: 'system', content: charPersonalityText, identifier: 'charPersonality' },
+      { role: 'system', content: scenarioText, identifier: 'scenario' },
+      // Unordered prompts without marker
+      { role: 'system', content: impersonationPrompt, identifier: 'impersonate' },
+      { role: 'system', content: groupNudge, identifier: 'groupNudge' },
+    ];
 
-    messages.push(...prompt);
+    // Tavern Extras - Summary
+    const summary = context.extensionPrompts['1_memory'];
+    if (summary && summary.value)
+      systemPrompts.push({
+        role: st_getPromptRole(summary.role),
+        content: summary.value,
+        identifier: 'summary',
+        position: st_getPromptPosition(summary.position),
+      });
+
+    // Authors Note
+    const authorsNote = context.extensionPrompts['2_floating_prompt'];
+    if (authorsNote && authorsNote.value)
+      systemPrompts.push({
+        role: st_getPromptRole(authorsNote.role),
+        content: authorsNote.value,
+        identifier: 'authorsNote',
+        position: st_getPromptPosition(authorsNote.position),
+      });
+
+    // Vectors Memory
+    const vectorsMemory = context.extensionPrompts['3_vectors'];
+    if (vectorsMemory && vectorsMemory.value)
+      systemPrompts.push({
+        role: 'system',
+        content: vectorsMemory.value,
+        identifier: 'vectorsMemory',
+        position: st_getPromptPosition(vectorsMemory.position),
+      });
+
+    const vectorsDataBank = context.extensionPrompts['4_vectors_data_bank'];
+    if (vectorsDataBank && vectorsDataBank.value)
+      systemPrompts.push({
+        role: st_getPromptRole(vectorsDataBank.role),
+        content: vectorsDataBank.value,
+        identifier: 'vectorsDataBank',
+        position: st_getPromptPosition(vectorsDataBank.position),
+      });
+
+    // Smart Context (ChromaDB)
+    const smartContext = context.extensionPrompts['chromadb'];
+    if (smartContext && smartContext.value)
+      systemPrompts.push({
+        role: 'system',
+        content: smartContext.value,
+        identifier: 'smartContext',
+        position: st_getPromptPosition(smartContext.position),
+      });
+
+    // Persona Description
+    if (
+      context.powerUserSettings.persona_description &&
+      context.powerUserSettings.persona_description_position === persona_description_positions.IN_PROMPT
+    ) {
+      systemPrompts.push({
+        role: 'system',
+        content: context.powerUserSettings.persona_description,
+        identifier: 'personaDescription',
+      });
+    }
+
+    function getPrompt(identifier: string): PromptConfig | undefined {
+      return systemPrompts.find((prompt) => prompt.identifier === identifier);
+    }
+
+    promptOrder.order.forEach((prompt) => {
+      if (!prompt.enabled) {
+        return;
+      }
+
+      const collectionPrompt = getPrompt(prompt.identifier);
+      if (collectionPrompt && collectionPrompt.content) {
+        messages.push({
+          role: collectionPrompt.role ?? 'system',
+          content: context.substituteParams(collectionPrompt.content),
+        });
+        return;
+      }
+
+      if (prompt.identifier === 'chatHistory') {
+        coreChat.forEach((message) => {
+          messages.push({
+            role: message.is_user ? 'user' : 'assistant',
+            content: message.mes,
+          });
+        });
+      }
+    });
+  }
+
+  const knownExtensionPrompts = [
+    '1_memory',
+    '2_floating_prompt',
+    '3_vectors',
+    '4_vectors_data_bank',
+    'chromadb',
+    'PERSONA_DESCRIPTION',
+    'QUIET_PROMPT',
+    'DEPTH_PROMPT',
+  ];
+
+  // Anything that is not a known extension prompt
+  for (const key in context.extensionPrompts) {
+    if (Object.hasOwn(context.extensionPrompts, key)) {
+      const prompt = context.extensionPrompts[key];
+      if (knownExtensionPrompts.includes(key)) continue;
+      if (!context.extensionPrompts[key].value) continue;
+      if (![extension_prompt_types.BEFORE_PROMPT, extension_prompt_types.IN_PROMPT].includes(prompt.position)) continue;
+
+      const hasFilter = typeof prompt.filter === 'function';
+      if (hasFilter && !(await prompt.filter())) continue;
+
+      if (prompt.position === extension_prompt_types.BEFORE_PROMPT) {
+        messages = [
+          ...messages.slice(0, prompt.depth),
+          {
+            role: st_getPromptRole(prompt.role) ?? 'system',
+            content: prompt.value,
+          },
+          ...messages.slice(prompt.depth),
+        ];
+      } else if (prompt.position === extension_prompt_types.IN_PROMPT) {
+        messages = [
+          ...messages.slice(0, messages.length - prompt.depth!),
+          {
+            role: st_getPromptRole(prompt.role) ?? 'system',
+            content: prompt.value,
+          },
+          ...messages.slice(messages.length - prompt.depth!),
+        ];
+      }
+    }
+  }
+
+  // Inject world info depth.
+  for (const worldInfo of worldInfoDepth) {
+    messages = [
+      ...messages.slice(0, messages.length - worldInfo.depth),
+      { role: st_getPromptRole(worldInfo.role), content: worldInfo.entries.join('\n') },
+      ...messages.slice(messages.length - worldInfo.depth),
+    ];
+  }
+
+  const groupDepthPrompts = st_getGroupDepthPrompts(selected_group, Number(this_chid));
+
+  if (selected_group && Array.isArray(groupDepthPrompts) && groupDepthPrompts.length > 0) {
+    groupDepthPrompts.forEach((value, index) => {
+      messages = [
+        ...messages.slice(0, messages.length - value.depth),
+        { role: value.role, content: value.text },
+        ...messages.slice(messages.length - value.depth),
+      ];
+    });
+  } else {
+    const depthPromptText =
+      st_baseChatReplace(characters[this_chid]?.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2) || '';
+    const depthPromptDepth = depth_prompt_depth_default;
+    const depthPromptRole = characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
+
+    messages = [
+      ...messages.slice(0, messages.length - depthPromptDepth),
+      { role: st_getPromptRole(depthPromptRole), content: depthPromptText },
+      ...messages.slice(messages.length - depthPromptDepth),
+    ];
+  }
+
+  // TODO: We should respect interval and world info scanning
+  const authorNote = st_getAuthorNote();
+  let authorNoteIndex = -1;
+  if (authorNote.prompt) {
+    authorNote.prompt = st_baseChatReplace(authorNote.prompt, name1, name2);
+    switch (authorNote.position) {
+      case extension_prompt_types.IN_PROMPT: // After first message
+        messages = [...messages.slice(0, 1), { role: 'user', content: authorNote.prompt }, ...messages.slice(1)];
+        authorNoteIndex = 1;
+        break;
+      case extension_prompt_types.IN_CHAT: // Depth + role in chat
+        messages = [
+          ...messages.slice(0, messages.length - authorNote.depth),
+          { role: st_getPromptRole(authorNote.role), content: authorNote.prompt },
+          ...messages.slice(messages.length - authorNote.depth),
+        ];
+        authorNoteIndex = messages.length - authorNote.depth - 1;
+        break;
+      case extension_prompt_types.BEFORE_PROMPT: // Before first message
+        messages.unshift({ role: 'user', content: authorNote.prompt });
+        authorNoteIndex = 0;
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Add world info to author note
+  if (authorNoteIndex >= 0) {
+    if (anBefore.length > 0) {
+      messages = [
+        ...messages.slice(0, authorNoteIndex),
+        { role: 'system', content: anBefore.join('\n') },
+        ...messages.slice(authorNoteIndex),
+      ];
+      authorNoteIndex++;
+    }
+
+    if (anAfter.length > 0) {
+      messages = [
+        ...messages.slice(0, authorNoteIndex + 1),
+        { role: 'system', content: anAfter.join('\n') },
+        ...messages.slice(authorNoteIndex + 1),
+      ];
+    }
   }
 
   return messages;

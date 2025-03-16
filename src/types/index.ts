@@ -4,6 +4,7 @@ import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from './popup.js';
 import { AutoModeOptions } from './translate.js';
 import { ConnectionProfile } from './profiles.js';
 import { WIPromptResult } from './world-info.js';
+import { ChatCompletionPreset } from './chat-completion.js';
 
 export enum EventNames {
   APP_READY = 'app_ready',
@@ -153,6 +154,7 @@ export interface SillyTavernContext {
   };
   powerUserSettings: {
     persona_description_position: number;
+    persona_description: string;
   };
   getWorldInfoPrompt: (chat: string[], maxContext: number, isDryRun: boolean) => Promise<WIPromptResult>;
   ToolManager: {
@@ -183,7 +185,9 @@ export interface SillyTavernContext {
       value: string;
       role: number;
       position: number;
+      depth: number;
       identifier: string;
+      filter?: any;
     }
   >;
   addOneMessage(
@@ -205,6 +209,19 @@ export interface SillyTavernContext {
     },
   ): void;
   saveChat: () => Promise<void>;
+  getPresetManager: (apiId?: string) => {
+    getCompletionPresetByName(name: string): undefined | any | ChatCompletionPreset;
+  };
+  substituteParams: (
+    content: string,
+    _name1?: string,
+    _name2?: string,
+    _original?: string,
+    _group?: string,
+    _replaceCharacterCard?: boolean,
+    additionalMacro?: Record<string, any>,
+    postProcessFn?: (x: string) => string,
+  ) => string;
 }
 
 declare global {
