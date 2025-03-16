@@ -108,6 +108,15 @@ export interface ChatMessage {
   } & Record<string, any>;
 }
 
+export interface ConnectAPIMap {
+  [key: string]: {
+    selected: string;
+    button?: string;
+    type?: string;
+    source?: string;
+  };
+}
+
 // Re-export the SillyTavernContext interface for easier access
 export interface SillyTavernContext {
   eventSource: EventEmitter;
@@ -227,6 +236,7 @@ export interface SillyTavernContext {
     additionalMacro?: Record<string, any>,
     postProcessFn?: (x: string) => string,
   ) => string;
+  CONNECT_API_MAP: ConnectAPIMap;
 }
 
 declare global {

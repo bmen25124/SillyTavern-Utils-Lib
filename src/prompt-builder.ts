@@ -49,14 +49,19 @@ export interface BuildPromptOptions {
 
 /**
  * Builds chat prompt. Don't expect a perfect chat prompt like ST. But I would give guarantee that it will cover 98% of the cases.
+ *
+ * Token calculation is crippled. We only calculating tokens for the chat history. For example, If your max context is 16k, total token will be 16k + world info, author note, extensionPrompts, etc. Better than nothing.
  * @param targetMessageIndex - Last message index to include in prompt
  * @param [param1={}] - Options
  */
 export async function buildPrompt(
-  api: string,
+  api?: string,
   targetMessageIndex?: number,
   { presetName, instructName, contextName, syspromptName, maxContext }: BuildPromptOptions = {},
 ): Promise<Message[]> {
+  if (!api) {
+    throw new Error('API is required');
+  }
   if (!['textgenerationwebui', 'openai'].includes(api)) {
     throw new Error('Unsupported API');
   }
@@ -204,12 +209,25 @@ export async function buildPrompt(
 
     messages.push({ role: 'system', content: storyString, ignoreInstruct: true });
 
-    coreChat.forEach((message) => {
-      messages.push({
+    // Add messages starting from most recent to respect context limits
+    let currentTokenCount = 0;
+    const chatMessages = [];
+    for (let i = coreChat.length - 1; i >= 0; i--) {
+      const message = coreChat[i];
+
+      // Skip if adding this message would exceed context
+      if (message.extra?.token_count && currentTokenCount + message.extra.token_count > currentMaxContext) {
+        break;
+      }
+
+      currentTokenCount += message.extra?.token_count || 0;
+      chatMessages.unshift({
         role: message.is_user ? 'user' : 'assistant',
         content: message.mes,
       });
-    });
+    }
+
+    messages.push(...chatMessages);
   } else {
     let oaiMessages = st_setOpenAIMessages(coreChat);
     let oaiMessageExamples = st_setOpenAIMessageExamples(mesExamplesArray);
@@ -374,12 +392,25 @@ export async function buildPrompt(
       }
 
       if (prompt.identifier === 'chatHistory') {
-        coreChat.forEach((message) => {
-          messages.push({
+        // Add messages starting from most recent to respect context limits
+        let currentTokenCount = 0;
+        const chatMessages = [];
+        for (let i = coreChat.length - 1; i >= 0; i--) {
+          const message = coreChat[i];
+
+          // Skip if adding this message would exceed context
+          if (message.extra?.token_count && currentTokenCount + message.extra.token_count > currentMaxContext) {
+            break;
+          }
+
+          currentTokenCount += message.extra?.token_count || 0;
+          chatMessages.unshift({
             role: message.is_user ? 'user' : 'assistant',
             content: message.mes,
           });
-        });
+        }
+
+        messages.push(...chatMessages);
       }
     });
   }
