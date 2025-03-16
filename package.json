@@ -40,7 +40,7 @@
         "library"
     ],
     "author": "bmen25124",
-    "license": "ISC",
+    "license": "MIT",
     "devDependencies": {
         "@types/jest": "^29.5.14",
         "@types/jquery": "^3.5.32",
