@@ -12,3 +12,10 @@ import { st_echo, system_avatar, systemUserName } from 'sillytavern-utils-lib/co
 import { POPUP_RESULT } from 'sillytavern-utils-lib/types/popup';
 import { EventNames } from 'sillytavern-utils-lib/types';
 ```
+
+Publish:
+```sh
+npm version patch
+npm install
+npm publish
+```

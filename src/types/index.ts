@@ -120,12 +120,16 @@ export interface ChatMessage {
   is_system?: boolean;
   force_avatar?: string;
   extra?: {
+    reasoning?: string;
+    reasoning_duration?: number;
+    reasoning_type?: string;
+    display_text?: string;
+    reasoning_display_text?: string;
     tool_invocations?: any[];
     append_title?: boolean;
     title?: string;
     isSmallSys?: boolean;
-    roadway_target_chat: number;
-  };
+  } & Record<string, any>;
 }
 
 // Re-export the SillyTavernContext interface for easier access
