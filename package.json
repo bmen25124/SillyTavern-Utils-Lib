@@ -41,6 +41,10 @@
     ],
     "author": "bmen25124",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bmen25124/sillytavern-utils-lib.git"
+    },
     "devDependencies": {
         "@types/jest": "^29.5.14",
         "@types/jquery": "^3.5.32",
