@@ -1,6 +1,9 @@
 import { EventEmitter } from 'events';
 import { Message } from '../prompt-builder.js';
 import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from './popup.js';
+import { AutoModeOptions } from './translate.js';
+import { ConnectionProfile } from './profiles.js';
+import { WIPromptResult } from './world-info.js';
 
 export enum EventNames {
   APP_READY = 'app_ready',
@@ -78,39 +81,9 @@ export interface ChatCompletionMessage {
   content: string;
 }
 
-export interface WIPromptResult {
-  worldInfoString: string;
-  worldInfoBefore: string;
-  worldInfoAfter: string;
-  worldInfoExamples: any[];
-  worldInfoDepth: {
-    depth: number;
-    role: number;
-    entries: string[];
-  }[];
-  anBefore: string[];
-  anAfter: string[];
-}
-
 export interface ExtractedData {
   content: string;
   reasoning?: string;
-}
-
-export interface ConnectionProfile {
-  id: string;
-  mode: string;
-  name?: string;
-  api?: string;
-  preset?: string;
-  model?: string;
-  proxy?: string;
-  instruct?: string;
-  context?: string;
-  instruct_state?: string;
-  tokenizer?: string;
-  stop_strings?: string;
-  exclude?: string[];
 }
 
 export interface ChatMessage {
@@ -147,12 +120,14 @@ export interface SillyTavernContext {
     localize?: boolean,
   ) => Promise<string>;
   extensionSettings: {
-    roadway: {
-      enabled: boolean;
-      profileId: string;
-      prompt: string;
+    connectionManager?: {
+      profiles: ConnectionProfile[];
     };
-  };
+    translate?: {
+      target_language: string;
+      auto_mode: AutoModeOptions;
+    };
+  } & Record<string, any>;
   saveSettingsDebounced: () => void;
   callGenericPopup: (
     content: JQuery<HTMLElement> | string | Element,

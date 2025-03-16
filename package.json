@@ -23,6 +23,18 @@
         "./types/popup": {
             "types": "./dist/types/popup.d.ts",
             "default": "./dist/types/popup.js"
+        },
+        "./types/profiles": {
+            "types": "./dist/types/profiles.d.ts",
+            "default": "./dist/types/profiles.js"
+        },
+        "./types/translate": {
+            "types": "./dist/types/translate.d.ts",
+            "default": "./dist/types/translate.js"
+        },
+        "./types/world-info": {
+            "types": "./dist/types/world-info.d.ts",
+            "default": "./dist/types/world-info.js"
         }
     },
     "files": [
