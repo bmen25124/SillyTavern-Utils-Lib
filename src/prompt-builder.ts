@@ -44,7 +44,7 @@ export interface BuildPromptOptions {
   instructName?: string;
   contextName?: string;
   syspromptName?: string;
-  maxContext?: number;
+  maxContext?: number | 'preset' | 'active';
 }
 
 /**
@@ -80,26 +80,36 @@ export async function buildPrompt(
   let mesExamplesArray = st_parseMesExamples(mesExamples, isInstruct);
 
   function getMaxContext(): number {
-    if (maxContext) {
+    if (!maxContext) {
+      return st_getMaxContextSize();
+    }
+
+    if (typeof maxContext === 'number') {
+      return maxContext;
+    }
+
+    if (maxContext === 'active' || !presetName) {
+      return st_getMaxContextSize();
+    }
+
+    if (typeof maxContext === 'number') {
       return maxContext;
     }
 
     let response: number | undefined;
-    if (presetName) {
-      if (api === 'textgenerationwebui') {
-        const preset = context.getPresetManager('textgenerationwebui')?.getCompletionPresetByName(presetName) as
-          | TextCompletionPreset
-          | undefined;
-        response = preset?.max_length;
-      } else {
-        const preset = context.getPresetManager('openai')?.getCompletionPresetByName(presetName) as
-          | ChatCompletionPreset
-          | undefined;
-        response = preset?.openai_max_context;
-      }
+    if (api === 'textgenerationwebui') {
+      const preset = context.getPresetManager('textgenerationwebui')?.getCompletionPresetByName(presetName) as
+        | TextCompletionPreset
+        | undefined;
+      response = preset?.max_length;
+    } else {
+      const preset = context.getPresetManager('openai')?.getCompletionPresetByName(presetName) as
+        | ChatCompletionPreset
+        | undefined;
+      response = preset?.openai_max_context;
     }
 
-    return response ?? st_getMaxContextSize();
+    return response || st_getMaxContextSize();
   }
 
   const currentMaxContext = getMaxContext();
