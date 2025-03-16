@@ -113,6 +113,21 @@ export interface ConnectionProfile {
   exclude?: string[];
 }
 
+export interface ChatMessage {
+  name: string;
+  mes: string;
+  is_user?: boolean;
+  is_system?: boolean;
+  force_avatar?: string;
+  extra?: {
+    tool_invocations?: any[];
+    append_title?: boolean;
+    title?: string;
+    isSmallSys?: boolean;
+    roadway_target_chat: number;
+  };
+}
+
 // Re-export the SillyTavernContext interface for easier access
 export interface SillyTavernContext {
   eventSource: EventEmitter;
@@ -146,20 +161,7 @@ export interface SillyTavernContext {
       confirm: (message: string, title?: string) => Promise<boolean>;
     };
   };
-  chat: {
-    name: string;
-    mes: string;
-    is_user?: boolean;
-    is_system?: boolean;
-    force_avatar?: string;
-    extra?: {
-      tool_invocations?: any[];
-      append_title?: boolean;
-      title?: string;
-      isSmallSys?: boolean;
-      roadway_target_chat: number;
-    };
-  }[];
+  chat: ChatMessage[];
   getCharacterCardFields: () => {
     system: string;
     mesExamples: string;
@@ -205,7 +207,24 @@ export interface SillyTavernContext {
       identifier: string;
     }
   >;
-  addOneMessage(mes: object): void;
+  addOneMessage(
+    mes: ChatMessage,
+    {
+      type,
+      insertAfter,
+      scroll,
+      insertBefore,
+      forceId,
+      showSwipes,
+    }?: {
+      type?: string;
+      insertAfter?: number;
+      scroll?: boolean;
+      insertBefore?: number;
+      forceId?: number;
+      showSwipes?: boolean;
+    },
+  ): void;
   saveChat: () => Promise<void>;
 }
 
