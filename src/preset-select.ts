@@ -1,6 +1,8 @@
 export interface BuildPresetOptions {
   label?: string; // e.g. "connection profile"
   initialValue?: string;
+  initialList?: string[];
+  onSelectChange?: (previousValue?: string, newValue?: string) => void | Promise<void>;
   create?: {
     onPopupOpen?: () => void | Promise<void>;
     onBeforeCreate?: (value: string) => boolean | Promise<boolean>;
@@ -35,6 +37,44 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
   // Wrap the select in the container
   select.parentNode?.insertBefore(container, select);
   container.appendChild(select);
+
+  // Add initial options if provided
+  if (options.initialList && options.initialList.length > 0) {
+    // Clear existing options first
+    select.innerHTML = '';
+
+    // Add new options from the list
+    for (const item of options.initialList) {
+      const option = document.createElement('option');
+      option.value = item;
+      option.textContent = item;
+      select.appendChild(option);
+    }
+  }
+
+  // Set initial value if provided
+  if (options.initialValue) {
+    // Find option with matching value or text content
+    const option = Array.from(select.options).find(
+      (opt) => opt.value === options.initialValue || opt.textContent === options.initialValue,
+    );
+
+    if (option) {
+      select.value = option.value;
+    }
+  }
+
+  // Track previous value for onSelectChange
+  let previousValue: string | undefined = select.value;
+
+  // Set up change event handler for the select
+  select.addEventListener('change', async () => {
+    const newValue = select.value;
+    if (options.onSelectChange && previousValue !== newValue) {
+      await options.onSelectChange(previousValue, newValue);
+    }
+    previousValue = newValue;
+  });
 
   // Add Create button if enabled
   if (options.create) {
@@ -85,6 +125,14 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       if (options.create?.onAfterCreate) {
         await options.create.onAfterCreate(trimmedValue);
       }
+      // Store previous value before changing
+      const prevValue = select.value;
+
+      // Trigger onSelectChange if the value actually changed
+      if (options.onSelectChange && prevValue !== trimmedValue) {
+        await options.onSelectChange(prevValue, trimmedValue);
+      }
+      previousValue = trimmedValue;
     });
 
     container.appendChild(createButton);
@@ -104,7 +152,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       }
 
       const selectedOption = select.options[select.selectedIndex];
-      const previousValue = selectedOption.value;
+      let previousValue = selectedOption.value;
 
       if (options.rename?.onPopupOpen) {
         await options.rename.onPopupOpen();
@@ -140,9 +188,19 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       selectedOption.value = trimmedValue;
       selectedOption.textContent = trimmedValue;
 
+      // Update the previous value tracker
+      if (previousValue === previousValue) {
+        previousValue = trimmedValue;
+      }
+
       // Run after rename hook
       if (options.rename?.onAfterRename) {
         await options.rename.onAfterRename(previousValue, trimmedValue);
+      }
+
+      // Trigger onSelectChange since the currently selected option changed its value
+      if (options.onSelectChange && select.value === trimmedValue) {
+        await options.onSelectChange(previousValue, trimmedValue);
       }
     });
 
@@ -164,6 +222,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
       const selectedOption = select.options[select.selectedIndex];
       const valueToDelete = selectedOption.value;
+      const selectedIndex = select.selectedIndex;
 
       if (options.delete?.onPopupOpen) {
         await options.delete.onPopupOpen();
@@ -182,28 +241,46 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
         if (!shouldProceed) return;
       }
 
+      // Store the value to delete for later reference
+      const deletedValue = valueToDelete;
+
+      // Determine the next option to select after deletion
+      let nextSelectedIndex = -1;
+      let nextValue = undefined;
+
+      if (select.options.length > 1) {
+        // Try to select the next option, or the previous if we're at the end
+        nextSelectedIndex = selectedIndex < select.options.length - 1 ? selectedIndex : selectedIndex - 1;
+        nextValue = select.options[nextSelectedIndex].value;
+      }
+
       // Remove the option
       select.removeChild(selectedOption);
 
+      // Select the next available option if there is one
+      if (nextSelectedIndex >= 0) {
+        select.selectedIndex = nextSelectedIndex;
+        previousValue = nextValue;
+
+        // Trigger onSelectChange
+        if (options.onSelectChange) {
+          await options.onSelectChange(deletedValue, nextValue);
+        }
+      } else {
+        // No options left, trigger onSelectChange with undefined as new value
+        if (options.onSelectChange) {
+          await options.onSelectChange(deletedValue, undefined);
+        }
+        previousValue = undefined;
+      }
+
       // Run after delete hook
       if (options.delete?.onAfterDelete) {
-        await options.delete.onAfterDelete(valueToDelete);
+        await options.delete.onAfterDelete(deletedValue);
       }
     });
 
     container.appendChild(deleteButton);
-  }
-
-  // Set initial value if provided
-  if (options.initialValue) {
-    // Find option with matching value or text content
-    const option = Array.from(select.options).find(
-      (opt) => opt.value === options.initialValue || opt.textContent === options.initialValue,
-    );
-
-    if (option) {
-      select.value = option.value;
-    }
   }
 
   return {
