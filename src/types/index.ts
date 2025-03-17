@@ -150,6 +150,12 @@ export interface SillyTavernContext {
   Popup: {
     show: {
       confirm: (message: string, title?: string) => Promise<boolean>;
+      input: (
+        header: string | null,
+        text?: string | null,
+        defaultValue?: string,
+        popupOptions?: PopupOptions,
+      ) => Promise<string | null>;
     };
   };
   chat: ChatMessage[];
