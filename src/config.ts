@@ -48,12 +48,16 @@ import { getGroupDepthPrompts, selected_group } from '../../../../group-chats.js
 import { regex_placement, getRegexedString } from '../../../regex/engine.js';
 import { InstructSettings } from './types/instruct.js';
 
+export async function st_runCommandCallback(command: string, ...args: any[]): Promise<void> {
+  // @ts-ignore
+  await SillyTavern.getContext().SlashCommandParser.commands[command].callback(...args);
+}
+
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
  */
 export async function st_echo(severity: string, message: string): Promise<void> {
-  // @ts-ignore
-  await SillyTavern.getContext().SlashCommandParser.commands['echo'].callback({ severity: severity }, message);
+  await st_runCommandCallback('echo', { severity: severity }, message);
 }
 
 export function st_getMaxContextSize(overrideResponseLength?: number): number {
