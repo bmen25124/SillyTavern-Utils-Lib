@@ -1,7 +1,10 @@
+import { st_echo } from './config.js';
+
 export interface BuildPresetOptions {
   label?: string; // e.g. "connection profile"
   initialValue?: string;
   initialList?: string[];
+  readOnlyValues?: string[];
   onSelectChange?: (previousValue?: string, newValue?: string) => void | Promise<void>;
   create?: {
     onPopupOpen?: () => void | Promise<void>;
@@ -22,6 +25,7 @@ export interface BuildPresetOptions {
 
 export function buildPresetSelect(selector: string, options: BuildPresetOptions = {}) {
   const context = SillyTavern.getContext();
+  const readOnlyValues = options.readOnlyValues || [];
 
   const select = document.querySelector<HTMLSelectElement>(selector);
   if (!select) {
@@ -33,6 +37,10 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
   container.className = 'preset-select-container';
   container.style.display = 'flex';
   container.style.alignItems = 'center';
+
+  const isReadOnly = (value: string): boolean => {
+    return readOnlyValues.includes(value);
+  };
 
   // Wrap the select in the container
   select.parentNode?.insertBefore(container, select);
@@ -48,6 +56,11 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       const option = document.createElement('option');
       option.value = item;
       option.textContent = item;
+
+      if (isReadOnly(item)) {
+        option.dataset.readonly = 'true';
+      }
+
       select.appendChild(option);
     }
   }
@@ -102,7 +115,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       const exists = Array.from(select.options).some((option) => option.textContent === trimmedValue);
 
       if (exists) {
-        await context.Popup.show.confirm(`A ${label} with this name already exists.`, 'Error');
+        await st_echo('warning', `A ${label} with this name already exists.`);
         return;
       }
 
@@ -147,12 +160,18 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
     renameButton.addEventListener('click', async () => {
       if (select.selectedIndex === -1) {
-        await context.Popup.show.confirm(`Please select a ${label} to rename.`, 'Error');
+        await st_echo('warning', `Please select a ${label} to rename.`);
         return;
       }
 
       const selectedOption = select.options[select.selectedIndex];
-      let previousValue = selectedOption.value;
+      let selectedValue = selectedOption.value;
+
+      // Check if the selected value is read-only
+      if (isReadOnly(selectedValue)) {
+        await st_echo('warning', `This ${label} cannot be renamed as it is read-only.`);
+        return;
+      }
 
       if (options.rename?.onPopupOpen) {
         await options.rename.onPopupOpen();
@@ -160,11 +179,11 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
       const newValue = await context.Popup.show.input(
         `Rename ${label}`,
-        `Please enter a new name for "${previousValue}":`,
-        previousValue,
+        `Please enter a new name for "${selectedValue}":`,
+        selectedValue,
       );
 
-      if (newValue === null || newValue.trim() === '' || newValue === previousValue) return;
+      if (newValue === null || newValue.trim() === '' || newValue === selectedValue) return;
 
       const trimmedValue = newValue.trim();
 
@@ -174,13 +193,13 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       );
 
       if (exists) {
-        await context.Popup.show.confirm(`A ${label} with this name already exists.`, 'Error');
+        await st_echo('warning', `A ${label} with this name already exists.`);
         return;
       }
 
       // Run before rename hook
       if (options.rename?.onBeforeRename) {
-        const shouldProceed = await options.rename.onBeforeRename(previousValue, trimmedValue);
+        const shouldProceed = await options.rename.onBeforeRename(selectedValue, trimmedValue);
         if (!shouldProceed) return;
       }
 
@@ -189,18 +208,18 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       selectedOption.textContent = trimmedValue;
 
       // Update the previous value tracker
-      if (previousValue === previousValue) {
+      if (selectedValue === previousValue) {
         previousValue = trimmedValue;
       }
 
       // Run after rename hook
       if (options.rename?.onAfterRename) {
-        await options.rename.onAfterRename(previousValue, trimmedValue);
+        await options.rename.onAfterRename(selectedValue, trimmedValue);
       }
 
       // Trigger onSelectChange since the currently selected option changed its value
       if (options.onSelectChange && select.value === trimmedValue) {
-        await options.onSelectChange(previousValue, trimmedValue);
+        await options.onSelectChange(selectedValue, trimmedValue);
       }
     });
 
@@ -216,13 +235,19 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
     deleteButton.addEventListener('click', async () => {
       if (select.selectedIndex === -1) {
-        await context.Popup.show.confirm(`Please select a ${label} to delete.`, 'Error');
+        await st_echo('warning', `Please select a ${label} to delete.`);
         return;
       }
 
       const selectedOption = select.options[select.selectedIndex];
       const valueToDelete = selectedOption.value;
       const selectedIndex = select.selectedIndex;
+
+      // Check if the selected value is read-only
+      if (isReadOnly(valueToDelete)) {
+        await st_echo('warning', `This ${label} cannot be deleted as it is read-only.`);
+        return;
+      }
 
       if (options.delete?.onPopupOpen) {
         await options.delete.onPopupOpen();
