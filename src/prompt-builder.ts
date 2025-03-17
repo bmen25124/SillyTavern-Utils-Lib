@@ -80,12 +80,12 @@ export async function buildPrompt(
   let mesExamplesArray = st_parseMesExamples(mesExamples, isInstruct);
 
   function getMaxContext(): number {
-    if (!maxContext) {
-      return st_getMaxContextSize();
-    }
-
     if (typeof maxContext === 'number') {
       return maxContext;
+    }
+
+    if (!maxContext) {
+      return st_getMaxContextSize();
     }
 
     if (maxContext === 'active' || !presetName) {
@@ -109,10 +109,13 @@ export async function buildPrompt(
       response = preset?.openai_max_context;
     }
 
-    return response || st_getMaxContextSize();
+    return typeof response === 'number' ? response : st_getMaxContextSize();
   }
 
   const currentMaxContext = getMaxContext();
+  if (currentMaxContext <= 0) {
+    return [];
+  }
 
   const canUseTools = context.ToolManager.isToolCallingSupported();
   let coreChat = context.chat
