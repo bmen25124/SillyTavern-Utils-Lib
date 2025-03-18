@@ -45,6 +45,7 @@ export interface BuildPromptOptions {
   contextName?: string;
   syspromptName?: string;
   maxContext?: number | 'preset' | 'active';
+  includeNames?: boolean;
 }
 
 /**
@@ -57,7 +58,8 @@ export interface BuildPromptOptions {
 export async function buildPrompt(
   api?: string,
   targetMessageIndex?: number,
-  { presetName, instructName, contextName, syspromptName, maxContext }: BuildPromptOptions = {},
+  targetCharacterId?: number,
+  { presetName, instructName, contextName, syspromptName, maxContext, includeNames }: BuildPromptOptions = {},
 ): Promise<Message[]> {
   if (!api) {
     throw new Error('API is required');
@@ -69,8 +71,9 @@ export async function buildPrompt(
   const context = SillyTavern.getContext();
   let messages: Message[] = [];
 
-  let { description, personality, persona, scenario, mesExamples, system, jailbreak } =
-    context.getCharacterCardFields();
+  let { description, personality, persona, scenario, mesExamples, system, jailbreak } = context.getCharacterCardFields({
+    chid: targetCharacterId,
+  });
 
   const instructPreset =
     api === 'textgenerationwebui'
@@ -167,6 +170,28 @@ export async function buildPrompt(
     }
   }
 
+  function addChatToMessages() {
+    // Add messages starting from most recent to respect context limits
+    let currentTokenCount = 0;
+    const chatMessages = [];
+    for (let i = coreChat.length - 1; i >= 0; i--) {
+      const message = coreChat[i];
+
+      // Skip if adding this message would exceed context
+      if (message.extra?.token_count && currentTokenCount + message.extra.token_count > currentMaxContext) {
+        break;
+      }
+
+      currentTokenCount += message.extra?.token_count || 0;
+      chatMessages.unshift({
+        role: message.is_user ? 'user' : 'assistant',
+        content: includeNames ? `${message.name}: ${message.mes}` : message.mes,
+      });
+    }
+
+    messages.push(...chatMessages);
+  }
+
   const textCompletion = api === 'textgenerationwebui';
   if (textCompletion) {
     // At this point, the raw message examples can be created
@@ -222,25 +247,7 @@ export async function buildPrompt(
 
     messages.push({ role: 'system', content: storyString, ignoreInstruct: true });
 
-    // Add messages starting from most recent to respect context limits
-    let currentTokenCount = 0;
-    const chatMessages = [];
-    for (let i = coreChat.length - 1; i >= 0; i--) {
-      const message = coreChat[i];
-
-      // Skip if adding this message would exceed context
-      if (message.extra?.token_count && currentTokenCount + message.extra.token_count > currentMaxContext) {
-        break;
-      }
-
-      currentTokenCount += message.extra?.token_count || 0;
-      chatMessages.unshift({
-        role: message.is_user ? 'user' : 'assistant',
-        content: message.mes,
-      });
-    }
-
-    messages.push(...chatMessages);
+    addChatToMessages();
   } else {
     let oaiMessages = st_setOpenAIMessages(coreChat);
     let oaiMessageExamples = st_setOpenAIMessageExamples(mesExamplesArray);
@@ -405,25 +412,7 @@ export async function buildPrompt(
       }
 
       if (prompt.identifier === 'chatHistory') {
-        // Add messages starting from most recent to respect context limits
-        let currentTokenCount = 0;
-        const chatMessages = [];
-        for (let i = coreChat.length - 1; i >= 0; i--) {
-          const message = coreChat[i];
-
-          // Skip if adding this message would exceed context
-          if (message.extra?.token_count && currentTokenCount + message.extra.token_count > currentMaxContext) {
-            break;
-          }
-
-          currentTokenCount += message.extra?.token_count || 0;
-          chatMessages.unshift({
-            role: message.is_user ? 'user' : 'assistant',
-            content: message.mes,
-          });
-        }
-
-        messages.push(...chatMessages);
+        addChatToMessages();
       }
     });
   }

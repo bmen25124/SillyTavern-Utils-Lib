@@ -55,6 +55,8 @@ export enum EventNames {
   GENERATE_AFTER_COMBINE_PROMPTS = 'generate_after_combine_prompts',
   GENERATE_AFTER_DATA = 'generate_after_data',
   GROUP_MEMBER_DRAFTED = 'group_member_drafted',
+  GROUP_WRAPPER_STARTED = 'group_wrapper_started',
+  GROUP_WRAPPER_FINISHED = 'group_wrapper_finished',
   WORLD_INFO_ACTIVATED = 'world_info_activated',
   TEXT_COMPLETION_SETTINGS_READY = 'text_completion_settings_ready',
   CHAT_COMPLETION_SETTINGS_READY = 'chat_completion_settings_ready',
@@ -94,6 +96,7 @@ export interface ChatMessage {
   is_user?: boolean;
   is_system?: boolean;
   force_avatar?: string;
+  original_avatar?: string;
   extra?: {
     reasoning?: string;
     reasoning_duration?: number;
@@ -159,7 +162,7 @@ export interface SillyTavernContext {
     };
   };
   chat: ChatMessage[];
-  getCharacterCardFields: () => {
+  getCharacterCardFields: (options?: { chid?: number }) => {
     system: string;
     mesExamples: string;
     description: string;
