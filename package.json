@@ -12,14 +12,6 @@
             "types": "./dist/config.d.ts",
             "default": "./dist/config.js"
         },
-        "./prompt-builder": {
-            "types": "./dist/prompt-builder.d.ts",
-            "default": "./dist/prompt-builder.js"
-        },
-        "./preset-select": {
-            "types": "./dist/preset-select.d.ts",
-            "default": "./dist/preset-select.js"
-        },
         "./types": {
             "types": "./dist/types/index.d.ts",
             "default": "./dist/types/index.js"
