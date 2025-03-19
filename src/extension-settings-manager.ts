@@ -28,6 +28,31 @@ export class ExtensionSettingsManager<T> {
     this.defaultSettings = defaultSettings;
   }
 
+  /**
+   * If defaultSettings has "version" and "formatVersion" properties, they will be used to track version and format version changes.
+   *
+   * For example, if you want to show a notification when a new version is released, you can check "result.version.changed".
+   *
+   * @param [options={}]
+   * @param [options.strategy='recursive'] - 'recursive' will migrate old settings with the default settings.
+   *
+   * For complex settings, you can specify a custom migration strategy. For example, if you change the field name from "old" to "new", you can use:
+   * @example
+   * [
+   *   {
+   *     from: 'FORMAT-0.1.0',
+   *     to: 'FORMAT-0.1.1',
+   *     action: (previous) => {
+   *       const data = {
+   *         ...previous,
+   *         new: previous.old,
+   *       };
+   *       delete data.old;
+   *       return data;
+   *     },
+   *   },
+   * ]
+   */
   public async initializeSettings<S extends any, _V = S>(
     options: {
       strategy?: 'recursive' | Array<VersionChange<any, any>>;
