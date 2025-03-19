@@ -127,7 +127,7 @@ export class ExtensionSettingsManager<T> {
         return anyChange;
       }
 
-      if (initializeRecursively(settings, this.defaultSettings)) {
+      if (initializeRecursively(settings, this.defaultSettings) || result.version.changed || result.formatVersion.changed) {
         this.saveSettings();
       }
     } else if (Array.isArray(strategy)) {
