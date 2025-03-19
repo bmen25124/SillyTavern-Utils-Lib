@@ -246,6 +246,15 @@ export interface SillyTavernContext {
     postProcessFn?: (x: string) => string,
   ) => string;
   CONNECT_API_MAP: ConnectAPIMap;
+  registerFunctionTool: (options: {
+    name: string;
+    displayName: string;
+    description: string;
+    parameters: Record<string, any>;
+    action: (parameters: Record<string, any>) => Promise<unknown>;
+    formatMessage: (parameters: Record<string, any>) => Promise<string>;
+  }) => void;
+  unregisterFunctionTool: (name: string) => void;
 }
 
 declare global {
