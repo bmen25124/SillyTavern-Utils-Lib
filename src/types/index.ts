@@ -3,7 +3,7 @@ import { Message } from '../prompt-builder.js';
 import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from './popup.js';
 import { AutoModeOptions } from './translate.js';
 import { ConnectionProfile } from './profiles.js';
-import { WIPromptResult } from './world-info.js';
+import { WIEntry, WIPromptResult } from './world-info.js';
 import { ChatCompletionPreset, ChatCompletionSettings } from './chat-completion.js';
 import { TextCompletionPreset } from './text-completion.js';
 
@@ -88,6 +88,15 @@ export interface ChatCompletionMessage {
 export interface ExtractedData {
   content: string;
   reasoning?: string;
+}
+
+export interface StreamResponse {
+  text: string;
+  swipes: string[];
+  state: {
+    reasoning?: string | null;
+    image?: string | null;
+  };
 }
 
 export interface ChatMessage {
@@ -175,9 +184,11 @@ export interface SillyTavernContext {
   powerUserSettings: {
     persona_description_position: number;
     persona_description: string;
+    persona_description_lorebook: string;
     prefer_character_prompt: boolean;
   };
   getWorldInfoPrompt: (chat: string[], maxContext: number, isDryRun: boolean) => Promise<WIPromptResult>;
+  saveWorldInfo: (name: string, data: { entries: Record<number, WIEntry> }, immediately?: boolean) => Promise<void>;
   ToolManager: {
     isToolCallingSupported(): boolean;
     canPerformToolCalls(type: string): boolean;
@@ -189,11 +200,13 @@ export interface SillyTavernContext {
       prompt: string | Message[],
       maxTokens: number,
       custom?: {
+        stream?: boolean;
+        signal?: AbortSignal;
         extractData?: boolean;
         includePreset?: boolean;
         includeInstruct?: boolean;
       },
-    ) => Promise<ExtractedData>;
+    ) => Promise<ExtractedData | (() => AsyncGenerator<StreamResponse>)>;
     handleDropdown: (
       selector: string,
       initialSelectedProfileId: string,
@@ -232,6 +245,7 @@ export interface SillyTavernContext {
     },
   ): void;
   saveChat: () => Promise<void>;
+  chatMetadata: Record<string, any>;
   getPresetManager: (apiId?: string) => {
     getCompletionPresetByName(name?: string): undefined | TextCompletionPreset | ChatCompletionPreset;
   };

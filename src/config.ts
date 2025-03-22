@@ -19,8 +19,17 @@ import {
   // @ts-ignore
 } from '../../../../../script.js';
 
-// @ts-ignore
-import { world_info_include_names, wi_anchor_position } from '../../../../world-info.js';
+import {
+  loadWorldInfo,
+  createWorldInfoEntry,
+  updateEditor,
+  world_info_include_names,
+  wi_anchor_position,
+  selected_world_info,
+  METADATA_KEY,
+  world_info,
+  // @ts-ignore
+} from '../../../../world-info.js';
 
 // @ts-ignore
 import { formatInstructModeExamples, formatInstructModeSystemPrompt } from '../../../../instruct-mode.js';
@@ -46,7 +55,12 @@ import { getGroupDepthPrompts, selected_group, is_group_generating } from '../..
 
 // @ts-ignore
 import { regex_placement, getRegexedString } from '../../../regex/engine.js';
+
+// @ts-ignore
+import { getCharaFilename } from '../../../../utils.js';
+
 import { InstructSettings } from './types/instruct.js';
+import { WIEntry } from './types/world-info.js';
 
 export async function st_runCommandCallback(command: string, ...args: any[]): Promise<void> {
   // @ts-ignore
@@ -229,12 +243,47 @@ export function st_getPromptPosition(position: number): string | false {
   return getPromptPosition(position);
 }
 
+export async function st_loadWorldInfo(
+  worldName: string,
+): Promise<{ entries: Record<number, WIEntry>; name: string } | null> {
+  return await loadWorldInfo(worldName);
+}
+
+export function st_getCharaFilename(
+  chid?: number | null,
+  {
+    manualAvatarKey,
+  }: {
+    manualAvatarKey?: string | null;
+  } = {},
+): string | null {
+  return getCharaFilename(chid, { manualAvatarKey });
+}
+
+export function st_createWorldInfoEntry(
+  _name: string,
+  data: { entries: Record<number, WIEntry> },
+): WIEntry | undefined {
+  return createWorldInfoEntry(_name, data);
+}
+
+export function st_updateEditor(
+  navigation: number,
+  flashOnNav?: boolean,
+  data: { entries: Record<number, WIEntry> } | null = null,
+): void {
+  updateEditor(navigation, flashOnNav, data);
+}
+
 export {
   persona_description_positions,
   name1,
   name2,
   world_info_include_names,
   wi_anchor_position,
+  selected_world_info,
+  METADATA_KEY as WI_METADATA_KEY,
+  world_info,
   extension_prompt_types,
   selected_group,
   is_group_generating,

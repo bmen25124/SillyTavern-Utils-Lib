@@ -11,3 +11,10 @@ export interface WIPromptResult {
   anBefore: string[];
   anAfter: string[];
 }
+
+export interface WIEntry {
+  uid: number;
+  key: string[];
+  content: string;
+  comment: string;
+}
