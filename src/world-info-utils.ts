@@ -8,28 +8,24 @@ import {
 } from './config.js';
 import { WIEntry } from './types/world-info.js';
 
-export type getAllWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
+export type getActiveWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
 
 /**
  * @returns Entries by world name. <worldName, entries[]>
  */
-export async function getAllWorldInfo(
-  include: getAllWorldInfoInclude[],
+export async function getActiveWorldInfo(
+  include: getActiveWorldInfoInclude[],
   targetCharacterIndex: number,
 ): Promise<Record<string, WIEntry[]>> {
-  if (!selected_world_info?.length) {
-    return {};
-  }
-
   function includedType(type: string): boolean {
-    return include.includes('all') || include.includes(type as getAllWorldInfoInclude);
+    return include.includes('all') || include.includes(type as getActiveWorldInfoInclude);
   }
 
   const context = SillyTavern.getContext();
   let entries: Record<string, WIEntry[]> = {};
 
   const isGlobal = includedType('global');
-  if (isGlobal) {
+  if (isGlobal && selected_world_info?.length) {
     for (const worldName of selected_world_info) {
       const worldInfo = await st_loadWorldInfo(worldName);
       if (!worldInfo) {

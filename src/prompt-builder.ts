@@ -40,6 +40,7 @@ export interface Message extends ChatCompletionMessage {
 }
 
 export interface BuildPromptOptions {
+  targetCharacterId?: number;
   presetName?: string;
   instructName?: string;
   contextName?: string;
@@ -49,6 +50,14 @@ export interface BuildPromptOptions {
   ignoreCharacterFields?: boolean;
   ignoreAuthorNote?: boolean;
   ignoreWorldInfo?: boolean;
+
+  /**
+   * Use both -1 to not include any messages
+   */
+  messageIndexesBetween?: {
+    start?: number;
+    end?: number;
+  };
 }
 
 /**
@@ -59,10 +68,9 @@ export interface BuildPromptOptions {
  * @param [param1={}] - Options
  */
 export async function buildPrompt(
-  api?: string,
-  targetMessageIndex?: number,
-  targetCharacterId?: number,
+  api: string,
   {
+    targetCharacterId,
     presetName,
     instructName,
     contextName,
@@ -72,11 +80,9 @@ export async function buildPrompt(
     ignoreCharacterFields,
     ignoreAuthorNote,
     ignoreWorldInfo,
+    messageIndexesBetween,
   }: BuildPromptOptions = {},
 ): Promise<Message[]> {
-  if (!api) {
-    throw new Error('API is required');
-  }
   if (!['textgenerationwebui', 'openai'].includes(api)) {
     throw new Error('Unsupported API');
   }
@@ -144,9 +150,14 @@ export async function buildPrompt(
   }
 
   const canUseTools = context.ToolManager.isToolCallingSupported();
-  let coreChat = context.chat
-    .slice(0, targetMessageIndex ? targetMessageIndex + 1 : undefined)
-    .filter((x) => !x.is_system || (canUseTools && Array.isArray(x.extra?.tool_invocations)));
+  const startIndex = messageIndexesBetween?.start ?? 0;
+  const endIndex = messageIndexesBetween?.end ? messageIndexesBetween.end + 1 : undefined;
+  let coreChat =
+    startIndex === -1 && endIndex === 0
+      ? []
+      : context.chat
+          .slice(startIndex, endIndex)
+          .filter((x) => !x.is_system || (canUseTools && Array.isArray(x.extra?.tool_invocations)));
 
   coreChat = await Promise.all(
     coreChat.map(async (chatItem, index) => {
