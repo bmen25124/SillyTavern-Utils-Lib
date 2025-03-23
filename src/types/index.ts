@@ -129,8 +129,13 @@ export interface ConnectAPIMap {
   };
 }
 
-// Re-export the SillyTavernContext interface for easier access
 export interface SillyTavernContext {
+  // Fuck commmand that types, I'll do it later.
+  SlashCommandParser: any;
+  SlashCommand: any;
+  SlashCommandArgument: any;
+  SlashCommandNamedArgument: any;
+  ARGUMENT_TYPE: any;
   eventSource: EventEmitter;
   getRequestHeaders: () => {
     'Content-Type': string;
