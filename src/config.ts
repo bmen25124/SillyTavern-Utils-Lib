@@ -22,7 +22,6 @@ import {
 import {
   loadWorldInfo,
   createWorldInfoEntry,
-  updateEditor,
   world_info_include_names,
   wi_anchor_position,
   selected_world_info,
@@ -265,14 +264,6 @@ export function st_createWorldInfoEntry(
   data: { entries: Record<number, WIEntry> },
 ): WIEntry | undefined {
   return createWorldInfoEntry(_name, data);
-}
-
-export function st_updateEditor(
-  navigation: number,
-  flashOnNav?: boolean,
-  data: { entries: Record<number, WIEntry> } | null = null,
-): void {
-  updateEditor(navigation, flashOnNav, data);
 }
 
 export {
