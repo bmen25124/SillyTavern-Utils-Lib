@@ -69,8 +69,8 @@ export async function st_runCommandCallback(command: string, ...args: any[]): Pr
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
  */
-export async function st_echo(severity: string, message: string): Promise<void> {
-  await st_runCommandCallback('echo', { severity: severity }, message);
+export async function st_echo(severity: string, message: string, { escapeHtml = true } = {}): Promise<void> {
+  await st_runCommandCallback('echo', { severity: severity, escapeHtml: Boolean(escapeHtml).toString() }, message);
 }
 
 export function st_getMaxContextSize(overrideResponseLength?: number): number {
