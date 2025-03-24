@@ -191,6 +191,7 @@ export interface SillyTavernContext {
     persona_description: string;
     persona_description_lorebook: string;
     prefer_character_prompt: boolean;
+    request_token_probabilities: boolean;
   };
   getWorldInfoPrompt: (chat: string[], maxContext: number, isDryRun: boolean) => Promise<WIPromptResult>;
   saveWorldInfo: (name: string, data: { entries: Record<number, WIEntry> }, immediately?: boolean) => Promise<void>;
@@ -254,6 +255,10 @@ export interface SillyTavernContext {
   chatMetadata: Record<string, any>;
   getPresetManager: (apiId?: string) => {
     getCompletionPresetByName(name?: string): undefined | TextCompletionPreset | ChatCompletionPreset;
+    getPresetList(): {
+      presets: undefined | TextCompletionPreset | ChatCompletionPreset[];
+      preset_names: Record<string, number> | string[];
+    };
   };
   substituteParams: (
     content: string,
@@ -275,6 +280,8 @@ export interface SillyTavernContext {
     formatMessage: (parameters: Record<string, any>) => Promise<string>;
   }) => void;
   unregisterFunctionTool: (name: string) => void;
+  extractMessageFromData: (data: object, activeApi?: string) => string;
+  getTextGenServer: (type?: string) => string;
 }
 
 declare global {
