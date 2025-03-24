@@ -1,11 +1,4 @@
-import {
-  characters,
-  selected_world_info,
-  st_getCharaFilename,
-  st_loadWorldInfo,
-  WI_METADATA_KEY,
-  world_info,
-} from './config.js';
+import { characters, selected_world_info, st_getCharaFilename, WI_METADATA_KEY, world_info } from './config.js';
 import { WIEntry } from './types/world-info.js';
 
 export type getActiveWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
@@ -27,7 +20,7 @@ export async function getActiveWorldInfo(
   const isGlobal = includedType('global');
   if (isGlobal && selected_world_info?.length) {
     for (const worldName of selected_world_info) {
-      const worldInfo = await st_loadWorldInfo(worldName);
+      const worldInfo = await context.loadWorldInfo(worldName);
       if (!worldInfo) {
         continue;
       }
@@ -46,7 +39,7 @@ export async function getActiveWorldInfo(
     const worldName = context.chatMetadata[WI_METADATA_KEY];
     if (worldName && !entries[worldName]) {
       entries[worldName] = [];
-      const worldInfo = await st_loadWorldInfo(worldName);
+      const worldInfo = await context.loadWorldInfo(worldName);
       if (worldInfo) {
         Object.values(worldInfo.entries).forEach((entry) => {
           entries[worldName].push(entry);
@@ -73,7 +66,7 @@ export async function getActiveWorldInfo(
     }
 
     for (const worldName of worldsToSearch) {
-      const worldInfo = await st_loadWorldInfo(worldName);
+      const worldInfo = await context.loadWorldInfo(worldName);
       if (!worldInfo || entries[worldName]) {
         continue;
       }
@@ -90,7 +83,7 @@ export async function getActiveWorldInfo(
     const worldName = context.powerUserSettings.persona_description_lorebook;
     if (worldName && !entries[worldName]) {
       entries[worldName] = [];
-      const worldInfo = await st_loadWorldInfo(worldName);
+      const worldInfo = await context.loadWorldInfo(worldName);
       if (worldInfo) {
         Object.values(worldInfo.entries).forEach((entry) => {
           entries[worldName].push(entry);

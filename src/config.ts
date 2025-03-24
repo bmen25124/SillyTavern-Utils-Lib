@@ -242,12 +242,6 @@ export function st_getPromptPosition(position: number): string | false {
   return getPromptPosition(position);
 }
 
-export async function st_loadWorldInfo(
-  worldName: string,
-): Promise<{ entries: Record<number, WIEntry>; name: string } | null> {
-  return await loadWorldInfo(worldName);
-}
-
 export function st_getCharaFilename(
   chid?: number | null,
   {

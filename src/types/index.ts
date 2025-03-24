@@ -195,6 +195,7 @@ export interface SillyTavernContext {
   };
   getWorldInfoPrompt: (chat: string[], maxContext: number, isDryRun: boolean) => Promise<WIPromptResult>;
   saveWorldInfo: (name: string, data: { entries: Record<number, WIEntry> }, immediately?: boolean) => Promise<void>;
+  loadWorldInfo: (worldName: string) => Promise<{ entries: Record<number, WIEntry>; name: string } | null>;
   reloadWorldInfoEditor: (file: string, loadIfNotSelected?: boolean) => void;
   ToolManager: {
     isToolCallingSupported(): boolean;
