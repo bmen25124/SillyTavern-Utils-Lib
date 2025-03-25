@@ -232,6 +232,7 @@ export interface SillyTavernContext {
       filter?: any;
     }
   >;
+  setExtensionPrompt: (key: string, value: string, position: number, depth: number, scan?: boolean, role?: number, filter?: (() => Promise<boolean> | boolean)) => void
   chatCompletionSettings: ChatCompletionSettings;
   textCompletionSettings: TextCompletionPreset;
   addOneMessage(

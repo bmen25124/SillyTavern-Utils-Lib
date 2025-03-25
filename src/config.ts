@@ -50,7 +50,7 @@ import {
 import { metadata_keys } from '../../../../authors-note.js';
 
 // @ts-ignore
-import { getGroupDepthPrompts, selected_group, is_group_generating } from '../../../../group-chats.js';
+import { getGroupDepthPrompts, selected_group, is_group_generating, groups } from '../../../../group-chats.js';
 
 // @ts-ignore
 import { regex_placement, getRegexedString } from '../../../regex/engine.js';
@@ -272,6 +272,7 @@ export {
   extension_prompt_types,
   selected_group,
   is_group_generating,
+  groups,
   this_chid,
   characters,
   depth_prompt_role_default,

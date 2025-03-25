@@ -8,7 +8,7 @@ export type getActiveWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' 
  */
 export async function getActiveWorldInfo(
   include: getActiveWorldInfoInclude[],
-  targetCharacterIndex: number,
+  targetCharacterIndex?: number,
 ): Promise<Record<string, WIEntry[]>> {
   function includedType(type: string): boolean {
     return include.includes('all') || include.includes(type as getActiveWorldInfoInclude);
@@ -49,9 +49,8 @@ export async function getActiveWorldInfo(
   }
 
   const isCharacter = includedType('character');
-  if (isCharacter) {
+  if (isCharacter && targetCharacterIndex) {
     const character = characters[targetCharacterIndex];
-    const name = character?.name;
     let worldsToSearch = new Set<string>();
 
     const baseWorldName = character?.data?.extensions?.world;
