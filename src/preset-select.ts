@@ -131,6 +131,9 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       newOption.textContent = trimmedValue;
       select.appendChild(newOption);
 
+      // Store previous value before changing
+      const prevValue = select.value;
+
       // Select the new option
       select.value = trimmedValue;
 
@@ -138,8 +141,6 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       if (options.create?.onAfterCreate) {
         await options.create.onAfterCreate(trimmedValue);
       }
-      // Store previous value before changing
-      const prevValue = select.value;
 
       // Trigger onSelectChange if the value actually changed
       if (options.onSelectChange && prevValue !== trimmedValue) {
