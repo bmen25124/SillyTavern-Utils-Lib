@@ -232,7 +232,15 @@ export interface SillyTavernContext {
       filter?: any;
     }
   >;
-  setExtensionPrompt: (key: string, value: string, position: number, depth: number, scan?: boolean, role?: number, filter?: (() => Promise<boolean> | boolean)) => void
+  setExtensionPrompt: (
+    key: string,
+    value: string,
+    position: number,
+    depth: number,
+    scan?: boolean,
+    role?: number,
+    filter?: () => Promise<boolean> | boolean,
+  ) => void;
   chatCompletionSettings: ChatCompletionSettings;
   textCompletionSettings: TextCompletionPreset;
   addOneMessage(
@@ -284,6 +292,9 @@ export interface SillyTavernContext {
   unregisterFunctionTool: (name: string) => void;
   extractMessageFromData: (data: object, activeApi?: string) => string;
   getTextGenServer: (type?: string) => string;
+  activateSendButtons: () => void;
+  deactivateSendButtons: () => void;
+  uuidv4: () => string;
 }
 
 declare global {
