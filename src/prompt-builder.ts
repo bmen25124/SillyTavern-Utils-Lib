@@ -531,24 +531,29 @@ export async function buildPrompt(
   if (!ignoreCharacterFields) {
     const groupDepthPrompts = st_getGroupDepthPrompts(selected_group, Number(this_chid));
     if (selected_group && Array.isArray(groupDepthPrompts) && groupDepthPrompts.length > 0) {
-      groupDepthPrompts.forEach((value, index) => {
-        messages = [
-          ...messages.slice(0, messages.length - value.depth),
-          { role: value.role, content: value.text },
-          ...messages.slice(messages.length - value.depth),
-        ];
-      });
+      groupDepthPrompts
+        .filter((value) => value.text)
+        .forEach((value, _index) => {
+          messages = [
+            ...messages.slice(0, messages.length - value.depth),
+            { role: value.role, content: value.text },
+            ...messages.slice(messages.length - value.depth),
+          ];
+        });
     } else {
       const depthPromptText =
         st_baseChatReplace(characters[this_chid]?.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2) || '';
-      const depthPromptDepth = depth_prompt_depth_default;
-      const depthPromptRole = characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
+      if (depthPromptText) {
+        const depthPromptDepth = depth_prompt_depth_default;
+        const depthPromptRole =
+          characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
 
-      messages = [
-        ...messages.slice(0, messages.length - depthPromptDepth),
-        { role: st_getPromptRole(depthPromptRole), content: depthPromptText },
-        ...messages.slice(messages.length - depthPromptDepth),
-      ];
+        messages = [
+          ...messages.slice(0, messages.length - depthPromptDepth),
+          { role: st_getPromptRole(depthPromptRole), content: depthPromptText },
+          ...messages.slice(messages.length - depthPromptDepth),
+        ];
+      }
     }
   }
 
