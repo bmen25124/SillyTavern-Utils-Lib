@@ -25,10 +25,10 @@ export async function getActiveWorldInfo(
         continue;
       }
 
+      if (!entries[worldName]) {
+        entries[worldName] = [];
+      }
       Object.values(worldInfo.entries).forEach((entry) => {
-        if (!entries[worldName]) {
-          entries[worldName] = [];
-        }
         entries[worldName].push(entry);
       });
     }
