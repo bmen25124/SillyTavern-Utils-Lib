@@ -58,6 +58,9 @@ import { regex_placement, getRegexedString } from '../../../regex/engine.js';
 // @ts-ignore
 import { getCharaFilename } from '../../../../utils.js';
 
+// @ts-ignore
+import { commonEnumProviders } from '../../../../slash-commands/SlashCommandCommonEnumsProvider.js';
+
 import { InstructSettings } from './types/instruct.js';
 import { WIEntry } from './types/world-info.js';
 
@@ -281,4 +284,5 @@ export {
   regex_placement,
   systemUserName,
   system_avatar,
+  commonEnumProviders,
 };
