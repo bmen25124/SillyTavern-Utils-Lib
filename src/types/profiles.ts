@@ -11,6 +11,7 @@ export interface ConnectionProfile {
   context?: string;
   sysprompt?: string;
   'sysprompt-state'?: string;
+  'api-url'?: string;
   tokenizer?: string;
   stop_strings?: string;
   exclude?: string[];
