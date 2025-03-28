@@ -13,7 +13,7 @@ export interface FancyDropdownOptions {
   onSelectChange?: (previousValues: string[], newValues: string[]) => void | Promise<void>;
   closeOnSelect?: boolean;
   /**
-   *default true
+   * default true
    */
   multiple?: boolean;
   // --- Search Options ---
@@ -27,9 +27,9 @@ export interface FancyDropdownOptions {
 /**
  * Builds a collapsing dropdown menu that allows multiple selections with checkmarks and optional fuzzy search.
  */
-export function buildFancyDropdown(selector: string, options: FancyDropdownOptions = {}) {
-  const $container = $(selector);
-  if ($container.length === 0) {
+export function buildFancyDropdown(selector: string | HTMLElement, options: FancyDropdownOptions = {}) {
+  const container = typeof selector === 'string' ? document.querySelector<HTMLElement>(selector) : selector;
+  if (!container) {
     throw new Error(`Could not find container: ${selector}`);
   }
 
@@ -45,88 +45,108 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
   let internalInitialList: Array<DropdownItem | string> = [...(options.initialList || [])]; // Modifiable internal copy
 
   // Clear container and apply base styles
-  $container.empty().addClass('fancy-dropdown-container').css({
+  container.innerHTML = ''; // Clear existing content
+  container.classList.add('fancy-dropdown-container');
+  Object.assign(container.style, {
     position: 'relative',
-    'user-select': 'none',
+    userSelect: 'none', // Note: 'user-select' becomes 'userSelect'
   });
 
   // --- Create Dropdown Trigger ---
-  const $dropdownTrigger = $('<div></div>').addClass('fancy-dropdown-trigger').css({
+  const dropdownTrigger = document.createElement('div');
+  dropdownTrigger.className = 'fancy-dropdown-trigger';
+  Object.assign(dropdownTrigger.style, {
     padding: '8px 12px',
     border: '1px solid var(--border-color)',
-    'background-color': 'var(--bg-color)',
+    backgroundColor: 'var(--bg-color)',
     color: 'var(--text-color)',
-    'border-radius': '4px',
+    borderRadius: '4px',
     cursor: 'pointer',
     display: 'flex',
-    'align-items': 'center',
-    'justify-content': 'space-between',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   });
-  const $triggerText = $('<span></span>').addClass('fancy-dropdown-trigger-text').text(placeholder);
-  const $triggerIcon = $('<i></i>').addClass('fas fa-chevron-down').css('margin-left', '8px');
-  $dropdownTrigger.append($triggerText, $triggerIcon);
-  $container.append($dropdownTrigger);
+
+  const triggerText = document.createElement('span');
+  triggerText.className = 'fancy-dropdown-trigger-text';
+  triggerText.textContent = placeholder;
+
+  const triggerIcon = document.createElement('i');
+  triggerIcon.className = 'fas fa-chevron-down'; // Assuming FontAwesome 5/6 setup
+  triggerIcon.style.marginLeft = '8px';
+
+  dropdownTrigger.append(triggerText, triggerIcon);
+  container.append(dropdownTrigger);
 
   // --- Create Dropdown List (Options Panel) ---
-  const $dropdownList = $('<div></div>').addClass('fancy-dropdown-list').css({
+  const dropdownList = document.createElement('div');
+  dropdownList.className = 'fancy-dropdown-list';
+  Object.assign(dropdownList.style, {
     position: 'absolute',
     top: '100%',
-    left: 0,
-    right: 0,
-    'max-height': '300px',
+    left: '0',
+    right: '0',
+    maxHeight: '300px',
     display: 'none', // Hidden by default
-    'z-index': 1050,
+    zIndex: '1050',
     border: '1px solid var(--border-color)',
-    'border-top': 'none',
-    'background-color': 'var(--bg-color-popup, var(--bg-color-secondary, var(--greyCAIbg, var(--grey30))))',
+    borderTop: 'none',
+    backgroundColor: 'var(--bg-color-popup, var(--bg-color-secondary, var(--greyCAIbg, var(--grey30))))',
     color: 'var(--text-color)',
-    'border-radius': '0 0 4px 4px',
-    'box-shadow': '0 4px 8px var(--black50a)',
-    // Allow internal scrolling if search is enabled or content overflows
-    'overflow-y': 'auto',
+    borderRadius: '0 0 4px 4px',
+    boxShadow: '0 4px 8px var(--black50a)',
+    overflowY: 'auto',
   });
-  $container.append($dropdownList);
+  container.append(dropdownList);
 
   // --- Create Search Input (if enabled) ---
-  let $searchInput: JQuery<HTMLElement> | null = null;
-  let $searchContainer: JQuery<HTMLElement> | null = null;
-  let $noResultsMessage: JQuery<HTMLElement> | null = null;
+  let searchInput: HTMLInputElement | null = null;
+  let searchContainer: HTMLDivElement | null = null;
+  let noResultsMessage: HTMLDivElement | null = null;
   let searchDebounceTimeout: number | null = null;
 
   if (enableSearch) {
-    $searchContainer = $('<div></div>').addClass('fancy-dropdown-search-wrapper').css({
+    searchContainer = document.createElement('div');
+    searchContainer.className = 'fancy-dropdown-search-wrapper';
+    Object.assign(searchContainer.style, {
       padding: '8px',
-      'border-bottom': '1px solid var(--border-color)', // Separator
+      borderBottom: '1px solid var(--border-color)', // Separator
       position: 'sticky', // Keep search bar visible while scrolling options
-      top: 0, // Stick to the top of the list container
-      'background-color': 'inherit', // Inherit background from list
+      top: '0', // Stick to the top of the list container
+      backgroundColor: 'inherit', // Inherit background from list
     });
 
-    $searchInput = $('<input type="text">')
-      .addClass('fancy-dropdown-search-input')
-      .attr('placeholder', searchPlaceholder)
-      .css({
-        width: '100%',
-        padding: '6px 10px',
-        border: '1px solid var(--border-color)',
-        'border-radius': '3px',
-        'box-sizing': 'border-box', // Include padding/border in width
-        'background-color': 'var(--bg-color)', // Use main bg for input
-        color: 'var(--text-color)',
-      })
-      .on('click', (e) => e.stopPropagation()); // Prevent closing dropdown
+    searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'fancy-dropdown-search-input';
+    searchInput.placeholder = searchPlaceholder;
+    Object.assign(searchInput.style, {
+      width: '100%',
+      padding: '6px 10px',
+      border: '1px solid var(--border-color)',
+      borderRadius: '3px',
+      boxSizing: 'border-box', // Include padding/border in width
+      backgroundColor: 'var(--bg-color)', // Use main bg for input
+      color: 'var(--text-color)',
+    });
 
-    $searchContainer.append($searchInput);
-    $dropdownList.append($searchContainer); // Add search bar to the top of the list
+    // Prevent closing dropdown when clicking inside search input
+    searchInput.addEventListener('click', (e) => e.stopPropagation());
+
+    searchContainer.append(searchInput);
+    dropdownList.append(searchContainer); // Add search bar to the top of the list
 
     // Message for no results
-    $noResultsMessage = $('<div></div>').addClass('fancy-dropdown-no-results').text(searchNoResults).css({
+    noResultsMessage = document.createElement('div');
+    noResultsMessage.className = 'fancy-dropdown-no-results';
+    noResultsMessage.textContent = searchNoResults;
+    Object.assign(noResultsMessage.style, {
       padding: '8px 12px',
-      'text-align': 'center',
+      textAlign: 'center',
       color: 'var(--text-color-secondary, var(--grey50))', // Dimmer text color
       display: 'none', // Hidden initially
     });
-    $dropdownList.append($noResultsMessage);
+    dropdownList.append(noResultsMessage);
   }
 
   // --- State and Helper Functions ---
@@ -147,81 +167,82 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     const fuseOptions: FuseGlobal.IFuseOptions<DropdownItem | string> = {
       // Default Fuse.js options - allow overriding
       includeScore: false,
-      threshold: 0.4, // Adjust for desired fuzziness (0=exact, 1=match anything)
+      threshold: 0.4,
       isCaseSensitive: false,
-      findAllMatches: true, // Find all potential matches
-      // Override defaults with user-provided options
+      findAllMatches: true,
       ...(options.searchFuseOptions || {}),
       // Ensure keys handle both string and object types if not overridden
       keys: options.searchFuseOptions?.keys || [
-        { name: 'label', weight: 0.7 }, // Prioritize label
-        { name: 'value', weight: 0.3 }, // Also search value, lower weight
+        { name: 'label', weight: 0.7 },
+        { name: 'value', weight: 0.3 },
       ],
     };
 
-    // Fuse works best with objects. Convert strings to {value: string, label: string} for indexing.
     const listForFuse = internalInitialList.map((item) =>
       typeof item === 'string' ? { value: item, label: item } : item,
     );
 
-    // Adjust keys if the original list contained only strings and no specific keys were provided
     if (!options.searchFuseOptions?.keys && internalInitialList.every((item) => typeof item === 'string')) {
-      fuseOptions.keys = ['label']; // Search the 'label' field we created
+      fuseOptions.keys = ['label'];
     }
 
-    fuse = new Fuse(listForFuse, fuseOptions as FuseGlobal.IFuseOptions<unknown>); // Use unknown because of the transform
+    // Type assertion needed as Fuse constructor expects a consistent type,
+    // but our transformation makes it technically mixed.
+    fuse = new Fuse(listForFuse as any[], fuseOptions as FuseGlobal.IFuseOptions<any>);
   };
 
   const updateTriggerText = () => {
     if (selectedValues.length === 0) {
-      $triggerText.text(placeholder);
+      triggerText.textContent = placeholder;
     } else if (selectedValues.length === 1) {
       const selectedValue = selectedValues[0];
       const selectedItem = internalInitialList.find((item) => getItemValue(item) === selectedValue);
-      const displayText = selectedItem ? getItemLabel(selectedItem) : selectedValue; // Fallback to value if somehow not found
-      $triggerText.text(displayText);
+      const displayText = selectedItem ? getItemLabel(selectedItem) : selectedValue;
+      triggerText.textContent = displayText;
     } else {
-      $triggerText.text(`${selectedValues.length} items selected`);
+      triggerText.textContent = `${selectedValues.length} items selected`;
     }
   };
 
   const updateUI = (filteredValues?: string[]) => {
     let hasVisibleItems = false;
-    $dropdownList.find('.fancy-dropdown-item').each(function () {
-      const $item = $(this);
-      const value = $item.data('value') as string;
+    const items = dropdownList.querySelectorAll<HTMLElement>('.fancy-dropdown-item');
+
+    items.forEach((itemElement) => {
+      const value = itemElement.dataset.value as string;
       const isSelected = selectedValues.includes(value);
+      const checkmark = itemElement.querySelector<HTMLElement>('.checkmark');
 
       // Update selection state
       if (isSelected) {
-        $item.addClass('selected');
-        $item.find('.checkmark').show();
+        itemElement.classList.add('selected');
+        if (checkmark) checkmark.style.display = 'inline-block';
       } else {
-        $item.removeClass('selected');
-        $item.find('.checkmark').hide();
+        itemElement.classList.remove('selected');
+        if (checkmark) checkmark.style.display = 'none';
       }
 
       // Update visibility based on search filter (if provided)
       if (filteredValues !== undefined) {
         if (filteredValues.includes(value)) {
-          $item.show();
+          itemElement.style.display = 'flex'; // Assuming items use flex
           hasVisibleItems = true;
         } else {
-          $item.hide();
+          itemElement.style.display = 'none';
         }
       } else {
-        // If no filter, ensure item is visible (unless filtered before)
-        $item.show();
+        // If no filter, ensure item is visible
+        itemElement.style.display = 'flex'; // Assuming items use flex
         hasVisibleItems = true; // Assume items exist if no filter
       }
     });
 
     // Show/hide "No results" message based on search
-    if (enableSearch && $noResultsMessage) {
+    if (enableSearch && noResultsMessage) {
       if (filteredValues !== undefined && !hasVisibleItems) {
-        $noResultsMessage.show();
+        noResultsMessage.style.display = 'block';
       } else {
-        $noResultsMessage.hide();
+        noResultsMessage.style.display = 'none';
       }
     }
 
@@ -235,79 +256,87 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
       return;
     }
 
-    if (searchTerm.trim() === '') {
+    const trimmedSearchTerm = searchTerm.trim();
+    if (trimmedSearchTerm === '') {
       updateUI(undefined); // Empty search, show all
       return;
     }
 
-    const results = fuse.search(searchTerm.trim());
-    // Extract the 'value' from the original item in the results
+    const results = fuse.search(trimmedSearchTerm);
+    // Extract the 'value' from the original item structure Fuse returns
     const matchedValues = results.map((result) => {
-      // The item stored by Fuse might be the transformed object or the original
-      const originalItem = result.item;
-      return typeof originalItem === 'string' ? originalItem : (originalItem as DropdownItem).value;
+      // Fuse returns the item it was initialized with in result.item
+      const originalItem = result.item as DropdownItem; // Cast based on how we initialize fuse
+      return originalItem.value;
     });
     updateUI(matchedValues);
   };
 
   // Debounced search handler
   const handleSearchInput = () => {
-    if (!$searchInput) return;
+    if (!searchInput) return;
     if (searchDebounceTimeout) {
       clearTimeout(searchDebounceTimeout);
     }
     searchDebounceTimeout = window.setTimeout(() => {
-      performSearch($searchInput!.val() as string);
+      if (searchInput) {
+        // Check again inside timeout
+        performSearch(searchInput.value);
+      }
     }, searchDebounceMs);
   };
 
   const openDropdown = () => {
     if (isOpen) return;
     isOpen = true;
-    $dropdownList.slideDown(150);
-    $triggerIcon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    // Replace slideDown with simple display change
+    dropdownList.style.display = 'block'; // Or 'flex' if list itself is a flex container
+    triggerIcon.classList.remove('fa-chevron-down');
+    triggerIcon.classList.add('fa-chevron-up');
+
     // Focus search input if enabled and visible
-    if (enableSearch && $searchInput) {
-      // Small delay to ensure the input is visible after slideDown
-      setTimeout(() => $searchInput!.focus(), 160);
+    if (enableSearch && searchInput) {
+      // Small delay might still be needed depending on browser rendering
+      setTimeout(() => searchInput?.focus(), 50); // Reduced delay
     }
   };
 
   const closeDropdown = () => {
     if (!isOpen) return;
     isOpen = false;
-    $dropdownList.slideUp(150, () => {
-      // Reset search after closing animation completes
-      if (enableSearch && $searchInput) {
-        $searchInput.val(''); // Clear search input
-        performSearch(''); // Reset list visibility
-      }
-    });
-    $triggerIcon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    // Replace slideUp with simple display change
+    dropdownList.style.display = 'none';
+
+    // Reset search after closing (immediately, as no animation)
+    if (enableSearch && searchInput) {
+      searchInput.value = ''; // Clear search input
+      performSearch(''); // Reset list visibility
+    }
+
+    triggerIcon.classList.remove('fa-chevron-up');
+    triggerIcon.classList.add('fa-chevron-down');
+
     if (searchDebounceTimeout) {
       clearTimeout(searchDebounceTimeout); // Clear any pending debounce on close
     }
   };
 
   // --- Event Handlers ---
-  $dropdownTrigger.on('click', (e) => {
+  dropdownTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
     isOpen ? closeDropdown() : openDropdown();
   });
 
-  $(document).on('click', (e) => {
-    if (
-      isOpen &&
-      !$container.is(e.target as unknown as Element) &&
-      $container.has(e.target as unknown as Element).length === 0
-    ) {
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (isOpen && container && !container.contains(e.target as Node)) {
       closeDropdown();
     }
   });
 
   // Attach search handler if enabled
-  if (enableSearch && $searchInput) {
-    $searchInput.on('input', handleSearchInput);
+  if (enableSearch && searchInput) {
+    searchInput.addEventListener('input', handleSearchInput);
   }
 
   // --- Option Item Creation ---
@@ -315,44 +344,48 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     const value = getItemValue(item);
     const label = getItemLabel(item);
 
-    const $item = $('<div></div>')
-      .addClass('fancy-dropdown-item')
-      .data('value', value)
-      .css({
-        padding: '8px 12px',
-        cursor: 'pointer',
-        display: 'flex',
-        'align-items': 'center',
-        'justify-content': 'space-between',
-      })
-      .hover(
-        function () {
-          $(this).css('background-color', 'var(--hover-color, var(--white20a))');
-        },
-        function () {
-          $(this).css('background-color', '');
-        },
-      );
+    const itemElement = document.createElement('div');
+    itemElement.className = 'fancy-dropdown-item';
+    itemElement.dataset.value = value; // Use dataset for data attributes
+    Object.assign(itemElement.style, {
+      padding: '8px 12px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    });
 
-    $('<span></span>').text(label).appendTo($item);
-    const $checkmark = $('<i></i>')
-      .addClass('checkmark fa-solid fa-check') // Ensure FontAwesome 6 class for solid check
-      .css({
-        'margin-left': '8px',
-        display: initiallySelected ? 'inline-block' : 'none',
-      });
-    $item.append($checkmark);
+    // Hover effect using mouseenter/mouseleave
+    itemElement.addEventListener('mouseenter', () => {
+      itemElement.style.backgroundColor = 'var(--hover-color, var(--white20a))';
+    });
+    itemElement.addEventListener('mouseleave', () => {
+      itemElement.style.backgroundColor = ''; // Reset to default
+    });
 
-    $item.on('click', function (e) {
+    const itemLabelSpan = document.createElement('span');
+    itemLabelSpan.textContent = label;
+    itemElement.append(itemLabelSpan);
+
+    const checkmark = document.createElement('i');
+    checkmark.className = 'checkmark fa-solid fa-check'; // FontAwesome 6 solid check
+    Object.assign(checkmark.style, {
+      marginLeft: '8px',
+      display: initiallySelected ? 'inline-block' : 'none',
+    });
+    itemElement.append(checkmark);
+
+    itemElement.addEventListener('click', function (e) {
       e.stopPropagation();
-      const clickedValue = $(this).data('value') as string;
+      // Use currentTarget to ensure we get the element the listener was attached to
+      const clickedValue = (e.currentTarget as HTMLElement).dataset.value as string;
       const previousValues = [...selectedValues];
       let changed = false;
 
       if (!multiple) {
         // Single selection mode
         if (selectedValues.includes(clickedValue)) {
-          // Allow deselecting in single selection mode
+          // Allow deselecting
           selectedValues = [];
           changed = true;
         } else {
@@ -361,8 +394,9 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
         }
       } else {
         // Multiple selection mode
-        if (selectedValues.includes(clickedValue)) {
-          selectedValues = selectedValues.filter((v) => v !== clickedValue);
+        const index = selectedValues.indexOf(clickedValue);
+        if (index > -1) {
+          selectedValues.splice(index, 1); // More efficient removal
           changed = true;
         } else {
           selectedValues.push(clickedValue);
@@ -370,21 +404,10 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
         }
       }
 
-      // Decide whether to keep search filter active or reset after selection
-      // Option 1: Keep filter
-      // updateUI(enableSearch ? ($searchInput.val() ? undefined : []) : undefined); // Complex: re-evaluate based on current search term
-      // Option 2: Reset filter (simpler user experience?)
-      // if (enableSearch && $searchInput) {
-      //     $searchInput.val('');
-      //     performSearch('');
-      // } else {
-      //     updateUI();
-      // }
-      // Option 3 (Compromise): Just update the checkmarks, filter remains
-      updateUI(undefined); // Re-render checkmarks, keep current visibility filter
+      // Just update the checkmarks, keep current visibility filter
+      updateUI(undefined); // Re-render checkmarks
 
       if (changed && options.onSelectChange) {
-        // Use Promise.resolve to handle both sync and async callbacks gracefully
         Promise.resolve(options.onSelectChange(previousValues, selectedValues)).catch((err) =>
           console.error('onSelectChange callback failed:', err),
         );
@@ -396,11 +419,12 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     });
 
     // Append before the 'no results' message if it exists
-    if ($noResultsMessage) {
-      $item.insertBefore($noResultsMessage);
+    if (noResultsMessage) {
+      dropdownList.insertBefore(itemElement, noResultsMessage);
     } else {
-      $dropdownList.append($item);
+      dropdownList.append(itemElement);
     }
+    return itemElement; // Return the created element if needed later
   };
 
   // --- Initialization ---
@@ -416,25 +440,29 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
 
   // --- Public API ---
   const api = {
-    $container,
-    $dropdownTrigger,
-    $dropdownList,
+    container, // Expose the main container element
+    dropdownTrigger, // Expose trigger element
+    dropdownList, // Expose list element
 
     getValues: () => [...selectedValues],
 
     setValues: (values: string[]) => {
       const previousValues = [...selectedValues];
+      // Ensure values exist in the list
       const validValues = values.filter((v) => internalInitialList.some((item) => getItemValue(item) === v));
       selectedValues = [...validValues];
-      // Reset search when setting values externally? Optional, but often makes sense.
-      if (enableSearch && $searchInput && $searchInput.val() !== '') {
-        $searchInput.val('');
+
+      // Reset search when setting values externally
+      if (enableSearch && searchInput && searchInput.value !== '') {
+        searchInput.value = '';
         performSearch(''); // Show all items after setting
       } else {
         updateUI(); // Just update checkmarks and trigger
       }
 
-      if (options.onSelectChange && JSON.stringify(previousValues) !== JSON.stringify(selectedValues)) {
+      // Avoid triggering callback if values didn't actually change
+      const changed = JSON.stringify(previousValues.sort()) !== JSON.stringify(selectedValues.sort());
+      if (changed && options.onSelectChange) {
         Promise.resolve(options.onSelectChange(previousValues, selectedValues)).catch((err) =>
           console.error('onSelectChange callback failed:', err),
         );
@@ -446,7 +474,6 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
 
     addOption: (value: string | DropdownItem, select: boolean = false) => {
       const itemValue = getItemValue(value);
-      const itemLabel = getItemLabel(value);
 
       // Check for duplicates
       if (internalInitialList.some((item) => getItemValue(item) === itemValue)) return;
@@ -454,19 +481,26 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
       internalInitialList.push(value);
       addOptionItem(value, select); // Add to DOM
 
-      // Update Fuse index
-      initializeFuse(); // Re-initialize Fuse - simpler than patching for now
+      initializeFuse(); // Re-initialize Fuse
 
       let changed = false;
       const previousValues = [...selectedValues];
       if (select && !selectedValues.includes(itemValue)) {
-        selectedValues.push(itemValue);
+        if (multiple) {
+          selectedValues.push(itemValue);
+        } else {
+          selectedValues = [itemValue]; // Replace in single select mode
+        }
+        changed = true;
+      } else if (select && !multiple && selectedValues.length > 0 && selectedValues[0] !== itemValue) {
+        // If single select mode and trying to select a different item
+        selectedValues = [itemValue];
         changed = true;
       }
 
       // Refresh UI potentially filtering if search is active
-      if (enableSearch && $searchInput && $searchInput.val() !== '') {
-        performSearch($searchInput.val() as string);
+      if (enableSearch && searchInput && searchInput.value !== '') {
+        performSearch(searchInput.value);
       } else {
         updateUI();
       }
@@ -482,25 +516,26 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
       const initialLength = internalInitialList.length;
       internalInitialList = internalInitialList.filter((item) => getItemValue(item) !== valueToRemove);
 
-      // If nothing was removed, exit
-      if (internalInitialList.length === initialLength) return;
+      if (internalInitialList.length === initialLength) return; // Nothing removed
 
       let selectionChanged = false;
       const previousValues = [...selectedValues];
-      if (selectedValues.includes(valueToRemove)) {
-        selectedValues = selectedValues.filter((v) => v !== valueToRemove);
+      const indexToRemove = selectedValues.indexOf(valueToRemove);
+      if (indexToRemove > -1) {
+        selectedValues.splice(indexToRemove, 1);
         selectionChanged = true;
       }
 
       // Remove from DOM
-      $dropdownList.find(`.fancy-dropdown-item[data-value="${valueToRemove}"]`).remove();
+      const itemToRemove = dropdownList.querySelector<HTMLElement>(
+        `.fancy-dropdown-item[data-value="${valueToRemove}"]`,
+      );
+      itemToRemove?.remove();
 
-      // Update Fuse index
       initializeFuse(); // Re-initialize Fuse
 
-      // Refresh UI potentially filtering if search is active
-      if (enableSearch && $searchInput && $searchInput.val() !== '') {
-        performSearch($searchInput.val() as string);
+      if (enableSearch && searchInput && searchInput.value !== '') {
+        performSearch(searchInput.value);
       } else {
         updateUI();
       }
@@ -513,20 +548,21 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     },
 
     selectAll: () => {
-      const previousValues = [...selectedValues];
-      // Select only currently *visible* options if search is active? Or all?
-      // Let's select *all* options regardless of current filter.
-      const allValues = internalInitialList.map((item) => getItemValue(item));
-      selectedValues = [...allValues];
+      if (!multiple) return; // Select all only makes sense for multiple mode
 
-      // Refresh UI potentially filtering if search is active
-      if (enableSearch && $searchInput && $searchInput.val() !== '') {
-        performSearch($searchInput.val() as string);
+      const previousValues = [...selectedValues];
+      const allValues = internalInitialList.map(getItemValue);
+      selectedValues = [...new Set([...selectedValues, ...allValues])]; // Use Set to avoid duplicates if some were already selected
+
+      const changed = JSON.stringify(previousValues.sort()) !== JSON.stringify(selectedValues.sort());
+
+      if (enableSearch && searchInput && searchInput.value !== '') {
+        performSearch(searchInput.value); // Re-apply filter, but update checks
       } else {
         updateUI();
       }
 
-      if (options.onSelectChange && JSON.stringify(previousValues) !== JSON.stringify(selectedValues)) {
+      if (changed && options.onSelectChange) {
         Promise.resolve(options.onSelectChange(previousValues, selectedValues)).catch((err) =>
           console.error('onSelectChange callback failed:', err),
         );
@@ -538,9 +574,8 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
       if (selectedValues.length > 0) {
         selectedValues = [];
 
-        // Refresh UI potentially filtering if search is active
-        if (enableSearch && $searchInput && $searchInput.val() !== '') {
-          performSearch($searchInput.val() as string);
+        if (enableSearch && searchInput && searchInput.value !== '') {
+          performSearch(searchInput.value); // Re-apply filter, update checks
         } else {
           updateUI();
         }
@@ -554,12 +589,14 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     },
 
     disable: () => {
-      $container.css('pointer-events', 'none').css('opacity', '0.6');
+      container.style.pointerEvents = 'none';
+      container.style.opacity = '0.6';
       if (isOpen) closeDropdown(); // Ensure it's closed when disabled
     },
 
     enable: () => {
-      $container.css('pointer-events', 'auto').css('opacity', '1');
+      container.style.pointerEvents = 'auto';
+      container.style.opacity = '1';
     },
 
     open: openDropdown,
