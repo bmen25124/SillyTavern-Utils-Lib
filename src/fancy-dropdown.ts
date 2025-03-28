@@ -1,5 +1,5 @@
-import * as FuseGlobal from 'fuse.js'; // Make sure Fuse.js is installed
-import Fuse from 'fuse.js'; // Make sure Fuse.js is installed
+import * as FuseGlobal from 'fuse.js';
+import Fuse from 'fuse.js';
 
 export interface DropdownItem {
   value: string;
@@ -12,6 +12,10 @@ export interface FancyDropdownOptions {
   initialList?: Array<string | DropdownItem>;
   onSelectChange?: (previousValues: string[], newValues: string[]) => void | Promise<void>;
   closeOnSelect?: boolean;
+  /**
+   *default true
+   */
+  multiple?: boolean;
   // --- Search Options ---
   enableSearch?: boolean;
   searchPlaceholderText?: string;
@@ -33,6 +37,7 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
   const placeholder = options.placeholderText || 'Select items...';
   const closeOnSelect = options.closeOnSelect ?? false;
   const enableSearch = options.enableSearch ?? false;
+  const multiple = options.multiple ?? true;
   const searchPlaceholder = options.searchPlaceholderText || 'Search...';
   const searchNoResults = options.searchNoResultsText || 'No results found';
   const searchDebounceMs = options.searchDebounceMs ?? 200;
@@ -344,12 +349,25 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
       const previousValues = [...selectedValues];
       let changed = false;
 
-      if (selectedValues.includes(clickedValue)) {
-        selectedValues = selectedValues.filter((v) => v !== clickedValue);
-        changed = true;
+      if (!multiple) {
+        // Single selection mode
+        if (selectedValues.includes(clickedValue)) {
+          // Allow deselecting in single selection mode
+          selectedValues = [];
+          changed = true;
+        } else {
+          selectedValues = [clickedValue];
+          changed = true;
+        }
       } else {
-        selectedValues.push(clickedValue);
-        changed = true;
+        // Multiple selection mode
+        if (selectedValues.includes(clickedValue)) {
+          selectedValues = selectedValues.filter((v) => v !== clickedValue);
+          changed = true;
+        } else {
+          selectedValues.push(clickedValue);
+          changed = true;
+        }
       }
 
       // Decide whether to keep search filter active or reset after selection
