@@ -1,4 +1,4 @@
-import { characters, selected_world_info, st_getCharaFilename, WI_METADATA_KEY, world_info } from './config.js';
+import { selected_world_info, st_getCharaFilename, WI_METADATA_KEY, world_info } from './config.js';
 import { WIEntry } from './types/world-info.js';
 
 export type getActiveWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
@@ -50,7 +50,7 @@ export async function getActiveWorldInfo(
 
   const isCharacter = includedType('character');
   if (isCharacter && targetCharacterIndex) {
-    const character = characters[targetCharacterIndex];
+    const character = context.characters[targetCharacterIndex];
     let worldsToSearch = new Set<string>();
 
     const baseWorldName = character?.data?.extensions?.world;

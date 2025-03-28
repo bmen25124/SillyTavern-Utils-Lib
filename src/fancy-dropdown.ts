@@ -1,9 +1,12 @@
-import { st_echo } from './config.js';
+export interface DropdownItem {
+  value: string;
+  label: string;
+}
 
 export interface FancyDropdownOptions {
   placeholderText?: string; // Text shown when nothing is selected
   initialValues?: string[];
-  initialList?: string[];
+  initialList?: Array<string | DropdownItem>; // Accepts either strings or value/label objects
   onSelectChange?: (previousValues: string[], newValues: string[]) => void | Promise<void>;
   closeOnSelect?: boolean; // Option to close dropdown after selecting/deselecting an item
 }
@@ -75,9 +78,13 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     if (selectedValues.length === 0) {
       $triggerText.text(placeholder);
     } else if (selectedValues.length === 1) {
-      // Optionally show the single selected item, or just count
-      $triggerText.text(selectedValues[0]);
-      // $triggerText.text('1 item selected');
+      // Find the matching item to get its label
+      const selectedValue = selectedValues[0];
+      const selectedItem = options.initialList?.find((item) =>
+        typeof item === 'string' ? item === selectedValue : item.value === selectedValue,
+      );
+      const displayText = typeof selectedItem === 'string' ? selectedItem : selectedItem?.label || selectedValue;
+      $triggerText.text(displayText);
     } else {
       $triggerText.text(`${selectedValues.length} items selected`);
     }
@@ -141,7 +148,10 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
   });
 
   // Function to add a single option item to the list
-  const addOptionItem = (value: string, initiallySelected: boolean) => {
+  const addOptionItem = (item: string | DropdownItem, initiallySelected: boolean) => {
+    const value = typeof item === 'string' ? item : item.value;
+    const label = typeof item === 'string' ? item : item.label;
+
     const $item = $('<div></div>')
       .addClass('fancy-dropdown-item')
       .data('value', value)
@@ -161,7 +171,7 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
         }, // Reverts to the list background on hover out
       );
 
-    $('<span></span>').text(value).appendTo($item);
+    $('<span></span>').text(label).appendTo($item);
 
     const $checkmark = $('<i></i>')
       .addClass('checkmark fa-solid fa-check')
@@ -205,7 +215,8 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
   // Add initial options if provided
   if (options.initialList && options.initialList.length > 0) {
     options.initialList.forEach((item) => {
-      addOptionItem(item, selectedValues.includes(item));
+      const value = typeof item === 'string' ? item : item.value;
+      addOptionItem(item, selectedValues.includes(value));
     });
   }
 
@@ -223,7 +234,9 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
     setValues: (values: string[]) => {
       const previousValues = [...selectedValues];
       // Ensure all provided values actually exist as options
-      const validValues = values.filter((v) => (options.initialList || []).includes(v));
+      const validValues = values.filter((v) =>
+        (options.initialList || []).some((item) => (typeof item === 'string' ? item === v : item.value === v)),
+      );
       selectedValues = [...validValues];
       updateUI();
 
@@ -232,19 +245,25 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
       }
     },
 
-    getOptions: () => [...(options.initialList || [])],
+    getOptions: () => [...(options.initialList || [])].map((item) => (typeof item === 'string' ? item : item.value)),
 
-    addOption: (value: string, select: boolean = false) => {
+    addOption: (value: string | DropdownItem, select: boolean = false) => {
       if (!options.initialList) options.initialList = [];
-      if (options.initialList.includes(value)) return; // Don't add duplicates
+      const itemValue = typeof value === 'string' ? value : value.value;
+
+      // Check for duplicates
+      if (
+        options.initialList.some((item) => (typeof item === 'string' ? item === itemValue : item.value === itemValue))
+      )
+        return;
 
       options.initialList.push(value);
       addOptionItem(value, select); // Add to DOM
 
       if (select) {
         const previousValues = [...selectedValues];
-        if (!selectedValues.includes(value)) {
-          selectedValues.push(value);
+        if (!selectedValues.includes(itemValue)) {
+          selectedValues.push(itemValue);
           updateUI(); // Update checkmark and trigger text
           if (options.onSelectChange) {
             options.onSelectChange(previousValues, selectedValues);
@@ -257,7 +276,9 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
 
     removeOption: (value: string) => {
       if (options.initialList) {
-        options.initialList = options.initialList.filter((v) => v !== value);
+        options.initialList = options.initialList.filter((item) =>
+          typeof item === 'string' ? item !== value : item.value !== value,
+        );
       }
 
       let changed = false;
@@ -277,7 +298,7 @@ export function buildFancyDropdown(selector: string, options: FancyDropdownOptio
 
     selectAll: () => {
       const previousValues = [...selectedValues];
-      selectedValues = [...(options.initialList || [])];
+      selectedValues = (options.initialList || []).map((item) => (typeof item === 'string' ? item : item.value));
       updateUI();
 
       if (options.onSelectChange && JSON.stringify(previousValues) !== JSON.stringify(selectedValues)) {

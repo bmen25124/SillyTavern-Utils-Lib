@@ -1,5 +1,4 @@
 import {
-  characters,
   extension_prompt_types,
   name1,
   name2,
@@ -542,11 +541,15 @@ export async function buildPrompt(
         });
     } else {
       const depthPromptText =
-        st_baseChatReplace(characters[this_chid]?.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2) || '';
+        st_baseChatReplace(
+          context.characters[this_chid]?.data?.extensions?.depth_prompt?.prompt?.trim(),
+          name1,
+          name2,
+        ) || '';
       if (depthPromptText) {
         const depthPromptDepth = depth_prompt_depth_default;
         const depthPromptRole =
-          characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
+          context.characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
 
         messages = [
           ...messages.slice(0, messages.length - depthPromptDepth),

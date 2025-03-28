@@ -129,6 +129,18 @@ export interface ConnectAPIMap {
   };
 }
 
+export interface Character {
+  name: string;
+  avatar: string;
+  description?: string;
+  first_mes?: string;
+  scenario?: string;
+  personality?: string;
+  tags?: string[];
+  creatorcomment?: string;
+  data?: Record<string, any>;
+}
+
 export interface SillyTavernContext {
   // Fuck commmand that types, I'll do it later.
   SlashCommandParser: any;
@@ -186,6 +198,7 @@ export interface SillyTavernContext {
     jailbreak: string;
     version: string;
   };
+  characters: Character[];
   powerUserSettings: {
     persona_description_position: number;
     persona_description: string;

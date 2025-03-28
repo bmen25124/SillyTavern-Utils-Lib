@@ -10,7 +10,6 @@ import {
   chat_metadata,
   extension_prompt_types,
   this_chid,
-  characters,
   depth_prompt_role_default,
   depth_prompt_depth_default,
   main_api,
@@ -20,13 +19,13 @@ import {
 } from '../../../../../script.js';
 
 import {
-  loadWorldInfo,
   createWorldInfoEntry,
   world_info_include_names,
   wi_anchor_position,
   selected_world_info,
   METADATA_KEY,
   world_info,
+  world_names,
   // @ts-ignore
 } from '../../../../world-info.js';
 
@@ -277,7 +276,6 @@ export {
   is_group_generating,
   groups,
   this_chid,
-  characters,
   depth_prompt_role_default,
   depth_prompt_depth_default,
   main_api,
@@ -285,4 +283,5 @@ export {
   systemUserName,
   system_avatar,
   commonEnumProviders,
+  world_names,
 };
