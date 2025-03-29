@@ -4,13 +4,14 @@ import { DropdownItem, FancyDropdownOptions, buildFancyDropdown } from './fancy-
 import { Generator } from './generate.js';
 import { buildPresetSelect } from './preset-select.js';
 import { buildPrompt, BuildPromptOptions } from './prompt-builder.js';
-import { getActiveWorldInfo } from './world-info-utils.js';
+import { applyWorldInfoEntry, getActiveWorldInfo } from './world-info-utils.js';
 
 export {
   buildPresetSelect,
   buildPrompt,
   ExtensionSettingsManager,
   getActiveWorldInfo,
+  applyWorldInfoEntry,
   buildFancyDropdown,
   Generator,
   createCharacter,

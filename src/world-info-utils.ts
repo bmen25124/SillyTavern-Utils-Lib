@@ -1,4 +1,10 @@
-import { selected_world_info, st_getCharaFilename, WI_METADATA_KEY, world_info } from './config.js';
+import {
+  selected_world_info,
+  st_createWorldInfoEntry,
+  st_getCharaFilename,
+  WI_METADATA_KEY,
+  world_info,
+} from './config.js';
 import { WIEntry } from './types/world-info.js';
 
 export type getActiveWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
@@ -92,4 +98,76 @@ export async function getActiveWorldInfo(
   }
 
   return entries;
+}
+
+/**
+ * @throws {Error} if entry/world not found
+ */
+export async function applyWorldInfoEntry({
+  entry,
+  selectedWorldName,
+  skipSave = false,
+  skipReload = false,
+  operation = 'auto',
+}: {
+  entry: WIEntry;
+  selectedWorldName: string;
+  skipSave?: boolean;
+  skipReload?: boolean;
+  operation?: 'add' | 'update' | 'auto';
+}): Promise<WIEntry> {
+  const context = SillyTavern.getContext();
+
+  const worldInfo = await context.loadWorldInfo(selectedWorldName);
+  if (!worldInfo) {
+    throw new Error('Failed to load world info');
+  }
+
+  // Find existing entry with the same key if needed
+  let targetEntry: WIEntry | undefined;
+  if (operation === 'update' || operation === 'auto') {
+    const existingEntry = Object.values(worldInfo.entries).find((e) => e.uid === entry.uid);
+    if (existingEntry) {
+      if (operation === 'auto') {
+        // In auto mode, update existing entry
+        targetEntry = existingEntry;
+      } else if (operation === 'update') {
+        targetEntry = existingEntry;
+      }
+    } else if (operation === 'update') {
+      throw new Error('Entry not found for update operation');
+    }
+  }
+
+  // Create new entry if needed
+  if (!targetEntry) {
+    targetEntry = st_createWorldInfoEntry(selectedWorldName, worldInfo);
+    if (!targetEntry) {
+      throw new Error('Failed to create entry');
+    }
+
+    // Copy properties from last entry if available
+    const values = Object.values(worldInfo.entries);
+    const lastEntry = values.length > 0 ? values[values.length - 1] : undefined;
+    if (lastEntry) {
+      const newId = targetEntry.uid;
+      Object.assign(targetEntry, lastEntry);
+      targetEntry.uid = newId;
+    }
+  }
+
+  // Update entry properties
+  targetEntry.key = entry.key;
+  targetEntry.content = entry.content;
+  targetEntry.comment = entry.comment;
+
+  // Save and update UI only if not skipping
+  if (!skipSave) {
+    await context.saveWorldInfo(selectedWorldName, worldInfo);
+  }
+  if (!skipReload) {
+    context.reloadWorldInfoEditor(selectedWorldName, true);
+  }
+
+  return targetEntry;
 }
