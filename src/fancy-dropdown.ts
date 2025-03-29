@@ -155,10 +155,6 @@ export function buildFancyDropdown(selector: string | HTMLElement, options: Fanc
 
   // --- State and Helper Functions ---
   let isOpen = false;
-  // Filter initial values to only include those that exist in the list
-  let selectedValues: string[] = (options.initialValues || []).filter((v) =>
-    internalInitialList.some((item) => getItemValue(item) === v),
-  );
   let fuse: Fuse<DropdownItem | string> | null = null;
 
   // Helper to get the display label for an item
@@ -166,6 +162,11 @@ export function buildFancyDropdown(selector: string | HTMLElement, options: Fanc
 
   // Helper to get the value for an item
   const getItemValue = (item: string | DropdownItem): string => (typeof item === 'string' ? item : item.value);
+
+  // Filter initial values to only include those that exist in the list
+  let selectedValues: string[] = (options.initialValues || []).filter((v) =>
+    internalInitialList.some((item) => getItemValue(item) === v),
+  );
 
   // Helper to create the Fuse.js index
   const initializeFuse = () => {
@@ -425,7 +426,13 @@ export function buildFancyDropdown(selector: string | HTMLElement, options: Fanc
         if (!canProceed) return;
 
         selectedValues = newValues;
-        updateUI(undefined); // Re-render checkmarks
+
+        // Re-render checkmarks while preserving search state
+        if (enableSearch && searchInput && searchInput.value.trim() !== '') {
+          performSearch(searchInput.value);
+        } else {
+          updateUI(undefined);
+        }
 
         if (options.onSelectChange) {
           Promise.resolve(options.onSelectChange(previousValues, selectedValues)).catch((err) =>
@@ -437,10 +444,6 @@ export function buildFancyDropdown(selector: string | HTMLElement, options: Fanc
           closeDropdown();
         }
       });
-
-      if (closeOnSelect) {
-        closeDropdown();
-      }
     });
 
     // Append before the 'no results' message if it exists

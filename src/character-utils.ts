@@ -1,4 +1,4 @@
-import { FullExportData } from "./types/index.js";
+import { FullExportData } from './types/index.js';
 
 export class CustomError<T> extends Error {
   readonly data?: T;

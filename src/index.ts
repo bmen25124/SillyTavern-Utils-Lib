@@ -6,5 +6,13 @@ import { buildPresetSelect } from './preset-select.js';
 import { buildPrompt, BuildPromptOptions } from './prompt-builder.js';
 import { getActiveWorldInfo } from './world-info-utils.js';
 
-export { buildPresetSelect, buildPrompt, ExtensionSettingsManager, getActiveWorldInfo, buildFancyDropdown, Generator, createCharacter };
+export {
+  buildPresetSelect,
+  buildPrompt,
+  ExtensionSettingsManager,
+  getActiveWorldInfo,
+  buildFancyDropdown,
+  Generator,
+  createCharacter,
+};
 export type { VersionChange, SettingsInitResult, BuildPromptOptions, FancyDropdownOptions, DropdownItem, CustomError };
