@@ -129,6 +129,42 @@ export interface ConnectAPIMap {
   };
 }
 
+export interface FullExportData {
+  name: string;
+  description: string;
+  first_mes: string;
+  scenario: string;
+  personality: string;
+  mes_example: string;
+  creatorcomment?: string;
+  tags?: string[];
+  avatar: string;
+  data: {
+    name: string;
+    description: string;
+    first_mes: string;
+    scenario: string;
+    personality: string;
+    mes_example: string;
+    character_book?: { entries: any[]; name: string };
+    creator?: string;
+    creator_notes?: string;
+    tags: string[];
+    character_version?: string;
+    avatar: string;
+    extensions?: {
+      depth_prompt?: {
+        prompt: string;
+        depth: number;
+        role: string;
+      };
+      world?: string;
+    };
+  };
+  spec: 'chara_card_v3';
+  spec_version: '3.0';
+}
+
 export interface Character {
   name: string;
   avatar: string;
@@ -199,6 +235,10 @@ export interface SillyTavernContext {
     version: string;
   };
   characters: Character[];
+  /**
+   * Weird naming, it also updates the UI. I mainly use for update character list after importing character via API.
+   */
+  getCharacters: () => Promise<void>;
   powerUserSettings: {
     persona_description_position: number;
     persona_description: string;

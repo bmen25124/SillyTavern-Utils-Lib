@@ -16,6 +16,10 @@ export interface FancyDropdownOptions {
    * default true
    */
   multiple?: boolean;
+  /**
+   * Optional callback to control selection changes. Return false to prevent selection.
+   */
+  onBeforeSelection?: (currentValues: string[], proposedValues: string[]) => boolean | Promise<boolean>;
   // --- Search Options ---
   enableSearch?: boolean;
   searchPlaceholderText?: string;
@@ -151,7 +155,10 @@ export function buildFancyDropdown(selector: string | HTMLElement, options: Fanc
 
   // --- State and Helper Functions ---
   let isOpen = false;
-  let selectedValues: string[] = [...(options.initialValues || [])];
+  // Filter initial values to only include those that exist in the list
+  let selectedValues: string[] = (options.initialValues || []).filter((v) =>
+    internalInitialList.some((item) => getItemValue(item) === v),
+  );
   let fuse: Fuse<DropdownItem | string> | null = null;
 
   // Helper to get the display label for an item
@@ -380,38 +387,56 @@ export function buildFancyDropdown(selector: string | HTMLElement, options: Fanc
       // Use currentTarget to ensure we get the element the listener was attached to
       const clickedValue = (e.currentTarget as HTMLElement).dataset.value as string;
       const previousValues = [...selectedValues];
-      let changed = false;
+      let newValues: string[];
 
       if (!multiple) {
         // Single selection mode
         if (selectedValues.includes(clickedValue)) {
-          // Allow deselecting
-          selectedValues = [];
-          changed = true;
+          newValues = []; // Deselecting
         } else {
-          selectedValues = [clickedValue];
-          changed = true;
+          newValues = [clickedValue];
         }
       } else {
         // Multiple selection mode
-        const index = selectedValues.indexOf(clickedValue);
-        if (index > -1) {
-          selectedValues.splice(index, 1); // More efficient removal
-          changed = true;
+        if (selectedValues.includes(clickedValue)) {
+          newValues = selectedValues.filter((v) => v !== clickedValue);
         } else {
-          selectedValues.push(clickedValue);
-          changed = true;
+          newValues = [...selectedValues, clickedValue];
         }
       }
 
-      // Just update the checkmarks, keep current visibility filter
-      updateUI(undefined); // Re-render checkmarks
+      // If onBeforeSelection is defined, check if we can proceed with the change
+      const proceedWithChange = async () => {
+        if (options.onBeforeSelection) {
+          try {
+            const canProceed = await Promise.resolve(options.onBeforeSelection(previousValues, newValues));
+            if (!canProceed) {
+              return false;
+            }
+          } catch (err) {
+            console.error('onBeforeSelection callback failed:', err);
+            return false;
+          }
+        }
+        return true;
+      };
 
-      if (changed && options.onSelectChange) {
-        Promise.resolve(options.onSelectChange(previousValues, selectedValues)).catch((err) =>
-          console.error('onSelectChange callback failed:', err),
-        );
-      }
+      proceedWithChange().then((canProceed) => {
+        if (!canProceed) return;
+
+        selectedValues = newValues;
+        updateUI(undefined); // Re-render checkmarks
+
+        if (options.onSelectChange) {
+          Promise.resolve(options.onSelectChange(previousValues, selectedValues)).catch((err) =>
+            console.error('onSelectChange callback failed:', err),
+          );
+        }
+
+        if (closeOnSelect) {
+          closeDropdown();
+        }
+      });
 
       if (closeOnSelect) {
         closeDropdown();
