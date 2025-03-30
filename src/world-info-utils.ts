@@ -115,7 +115,7 @@ export async function applyWorldInfoEntry({
   skipSave?: boolean;
   skipReload?: boolean;
   operation?: 'add' | 'update' | 'auto';
-}): Promise<{ entry: WIEntry, operation: 'add' | 'update'}> {
+}): Promise<{ entry: WIEntry; operation: 'add' | 'update' }> {
   const context = SillyTavern.getContext();
 
   const worldInfo = await context.loadWorldInfo(selectedWorldName);
@@ -155,7 +155,7 @@ export async function applyWorldInfoEntry({
       const newId = targetEntry.uid;
       Object.assign(targetEntry, lastEntry);
       targetEntry.uid = newId;
-      targetEntry
+      targetEntry;
     }
   }
 
@@ -174,6 +174,6 @@ export async function applyWorldInfoEntry({
 
   return {
     entry: targetEntry,
-    operation: operationResult
+    operation: operationResult,
   };
 }

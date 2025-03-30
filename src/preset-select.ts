@@ -1,9 +1,10 @@
 import { st_echo } from './config.js';
+import { DropdownItem } from './fancy-dropdown.js';
 
 export interface BuildPresetOptions {
   label?: string; // e.g. "connection profile"
   initialValue?: string;
-  initialList?: string[];
+  initialList?: Array<string | DropdownItem>;
   readOnlyValues?: string[];
   onSelectChange?: (previousValue?: string, newValue?: string) => void | Promise<void>;
   create?: {
@@ -38,6 +39,9 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
   container.style.display = 'flex';
   container.style.alignItems = 'center';
 
+  const getItemValue = (item: string | DropdownItem): string => (typeof item === 'string' ? item : item.value);
+  const getItemLabel = (item: string | DropdownItem): string => (typeof item === 'string' ? item : item.label);
+
   const isReadOnly = (value: string): boolean => {
     return readOnlyValues.includes(value);
   };
@@ -54,10 +58,11 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
     // Add new options from the list
     for (const item of options.initialList) {
       const option = document.createElement('option');
-      option.value = item;
-      option.textContent = item;
+      const value = getItemValue(item);
+      option.value = value;
+      option.textContent = getItemLabel(item);
 
-      if (isReadOnly(item)) {
+      if (isReadOnly(value)) {
         option.dataset.readonly = 'true';
       }
 
@@ -67,10 +72,8 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
   // Set initial value if provided
   if (options.initialValue) {
-    // Find option with matching value or text content
-    const option = Array.from(select.options).find(
-      (opt) => opt.value === options.initialValue || opt.textContent === options.initialValue,
-    );
+    // Find option with matching value
+    const option = Array.from(select.options).find((opt) => opt.value === options.initialValue);
 
     if (option) {
       select.value = option.value;
@@ -112,7 +115,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       const trimmedValue = newValue.trim();
 
       // Check if a preset with this name already exists
-      const exists = Array.from(select.options).some((option) => option.textContent === trimmedValue);
+      const exists = Array.from(select.options).some((option) => option.value === trimmedValue);
 
       if (exists) {
         await st_echo('warning', `A ${label} with this name already exists.`);
@@ -190,7 +193,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
       // Check if a preset with this name already exists
       const exists = Array.from(select.options).some(
-        (option) => option.textContent === trimmedValue && option !== selectedOption,
+        (option) => option.value === trimmedValue && option !== selectedOption,
       );
 
       if (exists) {
