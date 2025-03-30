@@ -115,13 +115,16 @@ export async function applyWorldInfoEntry({
   skipSave?: boolean;
   skipReload?: boolean;
   operation?: 'add' | 'update' | 'auto';
-}): Promise<WIEntry> {
+}): Promise<{ entry: WIEntry, operation: 'add' | 'update'}> {
   const context = SillyTavern.getContext();
 
   const worldInfo = await context.loadWorldInfo(selectedWorldName);
   if (!worldInfo) {
     throw new Error('Failed to load world info');
   }
+
+  const values = Object.values(worldInfo.entries);
+  const lastEntry = values.length > 0 ? values[values.length - 1] : undefined;
 
   // Find existing entry with the same key if needed
   let targetEntry: WIEntry | undefined;
@@ -139,6 +142,8 @@ export async function applyWorldInfoEntry({
     }
   }
 
+  const operationResult = targetEntry ? 'update' : 'add';
+
   // Create new entry if needed
   if (!targetEntry) {
     targetEntry = st_createWorldInfoEntry(selectedWorldName, worldInfo);
@@ -146,13 +151,11 @@ export async function applyWorldInfoEntry({
       throw new Error('Failed to create entry');
     }
 
-    // Copy properties from last entry if available
-    const values = Object.values(worldInfo.entries);
-    const lastEntry = values.length > 0 ? values[values.length - 1] : undefined;
     if (lastEntry) {
       const newId = targetEntry.uid;
       Object.assign(targetEntry, lastEntry);
       targetEntry.uid = newId;
+      targetEntry
     }
   }
 
@@ -169,5 +172,8 @@ export async function applyWorldInfoEntry({
     context.reloadWorldInfoEditor(selectedWorldName, true);
   }
 
-  return targetEntry;
+  return {
+    entry: targetEntry,
+    operation: operationResult
+  };
 }
