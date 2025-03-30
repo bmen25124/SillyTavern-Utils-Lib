@@ -17,4 +17,5 @@ export interface WIEntry {
   key: string[];
   content: string;
   comment: string;
+  disable: boolean;
 }
