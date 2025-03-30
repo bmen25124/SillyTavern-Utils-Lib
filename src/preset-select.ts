@@ -2,7 +2,7 @@ import { st_echo } from './config.js';
 import { DropdownItem } from './fancy-dropdown.js';
 
 export interface BuildPresetOptions {
-  label?: string; // e.g. "connection profile"
+  label?: (value: string) => string; // e.g. "connection profile" or a function that returns label
   initialValue?: string;
   initialList?: Array<string | DropdownItem>;
   readOnlyValues?: string[];
@@ -10,12 +10,18 @@ export interface BuildPresetOptions {
   create?: {
     onPopupOpen?: () => void | Promise<void>;
     onBeforeCreate?: (value: string) => boolean | Promise<boolean>;
-    onAfterCreate?: (value: string) => void | Promise<void>;
+    /**
+     * @returns return string if you want to modify the value
+     */
+    onAfterCreate?: (value: string) => string | void | Promise<string | void>;
   };
   rename?: {
     onPopupOpen?: () => void | Promise<void>;
     onBeforeRename?: (previousValue: string, newValue: string) => boolean | Promise<boolean>;
-    onAfterRename?: (previousValue: string, newValue: string) => void | Promise<void>;
+    /**
+     * @returns return string if you want to modify the value
+     */
+    onAfterRename?: (previousValue: string, newValue: string) => string | void | Promise<string | void>;
   };
   delete?: {
     onPopupOpen?: () => void | Promise<void>;
@@ -33,14 +39,11 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
     throw new Error(`Could not find preset select: ${selector}`);
   }
 
-  const label = options.label || 'preset';
+  const getLabel = (value: string) => (options.label ? options.label(value) : value);
   const container = document.createElement('div');
   container.className = 'preset-select-container';
   container.style.display = 'flex';
   container.style.alignItems = 'center';
-
-  const getItemValue = (item: string | DropdownItem): string => (typeof item === 'string' ? item : item.value);
-  const getItemLabel = (item: string | DropdownItem): string => (typeof item === 'string' ? item : item.label);
 
   const isReadOnly = (value: string): boolean => {
     return readOnlyValues.includes(value);
@@ -55,12 +58,14 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
     // Clear existing options first
     select.innerHTML = '';
 
+    const getItemValue = (item: string | DropdownItem): string => (typeof item === 'string' ? item : item.value);
+
     // Add new options from the list
     for (const item of options.initialList) {
       const option = document.createElement('option');
       const value = getItemValue(item);
       option.value = value;
-      option.textContent = getItemLabel(item);
+      option.textContent = getLabel(value);
 
       if (isReadOnly(value)) {
         option.dataset.readonly = 'true';
@@ -96,29 +101,31 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
   if (options.create) {
     const createButton = document.createElement('i');
     createButton.className = 'menu_button fa-solid fa-file-circle-plus';
-    createButton.title = `Create a new ${label}`;
-    createButton.setAttribute('data-i18n', `[title]Create a new ${label}`);
+    const createLabel = getLabel('');
+    createButton.title = `Create a new ${createLabel}`;
+    createButton.setAttribute('data-i18n', `[title]Create a new ${createLabel}`);
 
     createButton.addEventListener('click', async () => {
       if (options.create?.onPopupOpen) {
         await options.create.onPopupOpen();
       }
 
+      const popupLabel = getLabel('');
       const newValue = await context.Popup.show.input(
-        `Create a new ${label}`,
-        `Please enter a name for the new ${label}:`,
+        `Create a new ${popupLabel}`,
+        `Please enter a name for the new ${popupLabel}:`,
         '',
       );
 
       if (newValue === null || newValue.trim() === '') return;
 
-      const trimmedValue = newValue.trim();
+      let trimmedValue = newValue.trim();
 
       // Check if a preset with this name already exists
       const exists = Array.from(select.options).some((option) => option.value === trimmedValue);
 
       if (exists) {
-        await st_echo('warning', `A ${label} with this name already exists.`);
+        await st_echo('warning', `A ${getLabel(trimmedValue)} with this name already exists.`);
         return;
       }
 
@@ -128,10 +135,18 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
         if (!shouldProceed) return;
       }
 
+      // Run after create hook and potentially update the value
+      if (options.create?.onAfterCreate) {
+        const result = await options.create.onAfterCreate(trimmedValue);
+        if (typeof result === 'string') {
+          trimmedValue = result;
+        }
+      }
+
       // Create new option
       const newOption = document.createElement('option');
       newOption.value = trimmedValue;
-      newOption.textContent = trimmedValue;
+      newOption.textContent = getLabel(trimmedValue);
       select.appendChild(newOption);
 
       // Store previous value before changing
@@ -139,11 +154,6 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
       // Select the new option
       select.value = trimmedValue;
-
-      // Run after create hook
-      if (options.create?.onAfterCreate) {
-        await options.create.onAfterCreate(trimmedValue);
-      }
 
       // Trigger onSelectChange if the value actually changed
       if (options.onSelectChange && prevValue !== trimmedValue) {
@@ -159,12 +169,13 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
   if (options.rename) {
     const renameButton = document.createElement('i');
     renameButton.className = 'menu_button fa-solid fa-pencil';
-    renameButton.title = `Rename a ${label}`;
-    renameButton.setAttribute('data-i18n', `[title]Rename a ${label}`);
+    const renameLabel = getLabel('');
+    renameButton.title = `Rename a ${renameLabel}`;
+    renameButton.setAttribute('data-i18n', `[title]Rename a ${renameLabel}`);
 
     renameButton.addEventListener('click', async () => {
       if (select.selectedIndex === -1) {
-        await st_echo('warning', `Please select a ${label} to rename.`);
+        await st_echo('warning', `Please select a ${getLabel('')} to rename.`);
         return;
       }
 
@@ -173,7 +184,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
       // Check if the selected value is read-only
       if (isReadOnly(selectedValue)) {
-        await st_echo('warning', `This ${label} cannot be renamed as it is read-only.`);
+        await st_echo('warning', `This ${getLabel(selectedValue)} cannot be renamed as it is read-only.`);
         return;
       }
 
@@ -182,14 +193,14 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       }
 
       const newValue = await context.Popup.show.input(
-        `Rename ${label}`,
+        `Rename ${getLabel(selectedValue)}`,
         `Please enter a new name for "${selectedValue}":`,
         selectedValue,
       );
 
       if (newValue === null || newValue.trim() === '' || newValue === selectedValue) return;
 
-      const trimmedValue = newValue.trim();
+      let trimmedValue = newValue.trim();
 
       // Check if a preset with this name already exists
       const exists = Array.from(select.options).some(
@@ -197,7 +208,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       );
 
       if (exists) {
-        await st_echo('warning', `A ${label} with this name already exists.`);
+        await st_echo('warning', `A ${getLabel(trimmedValue)} with this name already exists.`);
         return;
       }
 
@@ -207,18 +218,21 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
         if (!shouldProceed) return;
       }
 
+      // Run after rename hook and potentially update the value
+      if (options.rename?.onAfterRename) {
+        const result = await options.rename.onAfterRename(selectedValue, trimmedValue);
+        if (typeof result === 'string') {
+          trimmedValue = result;
+        }
+      }
+
       // Rename the option
       selectedOption.value = trimmedValue;
-      selectedOption.textContent = trimmedValue;
+      selectedOption.textContent = getLabel(trimmedValue);
 
       // Update the previous value tracker
       if (selectedValue === previousValue) {
         previousValue = trimmedValue;
-      }
-
-      // Run after rename hook
-      if (options.rename?.onAfterRename) {
-        await options.rename.onAfterRename(selectedValue, trimmedValue);
       }
 
       // Trigger onSelectChange since the currently selected option changed its value
@@ -234,12 +248,13 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
   if (options.delete) {
     const deleteButton = document.createElement('i');
     deleteButton.className = 'menu_button fa-solid fa-trash-can';
-    deleteButton.title = `Delete a ${label}`;
-    deleteButton.setAttribute('data-i18n', `[title]Delete a ${label}`);
+    const deleteLabel = getLabel('');
+    deleteButton.title = `Delete a ${deleteLabel}`;
+    deleteButton.setAttribute('data-i18n', `[title]Delete a ${deleteLabel}`);
 
     deleteButton.addEventListener('click', async () => {
       if (select.selectedIndex === -1) {
-        await st_echo('warning', `Please select a ${label} to delete.`);
+        await st_echo('warning', `Please select a ${getLabel('')} to delete.`);
         return;
       }
 
@@ -249,7 +264,7 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
 
       // Check if the selected value is read-only
       if (isReadOnly(valueToDelete)) {
-        await st_echo('warning', `This ${label} cannot be deleted as it is read-only.`);
+        await st_echo('warning', `This ${getLabel(valueToDelete)} cannot be deleted as it is read-only.`);
         return;
       }
 
@@ -258,8 +273,8 @@ export function buildPresetSelect(selector: string, options: BuildPresetOptions 
       }
 
       const confirmed = await context.Popup.show.confirm(
+        `Delete ${getLabel(valueToDelete)}`,
         `Are you sure you want to delete "${valueToDelete}"?`,
-        `Delete ${label}`,
       );
 
       if (!confirmed) return;
