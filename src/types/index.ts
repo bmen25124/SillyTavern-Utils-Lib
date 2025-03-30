@@ -172,6 +172,7 @@ export interface Character {
   first_mes?: string;
   scenario?: string;
   personality?: string;
+  mes_example?: string;
   tags?: string[];
   creatorcomment?: string;
   data?: Record<string, any>;
