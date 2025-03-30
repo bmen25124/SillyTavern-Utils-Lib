@@ -3,7 +3,7 @@ import { ExtensionSettingsManager, type VersionChange, type SettingsInitResult }
 import { DropdownItem, FancyDropdownOptions, buildFancyDropdown } from './fancy-dropdown.js';
 import { Generator } from './generate.js';
 import { buildPresetSelect } from './preset-select.js';
-import { buildPrompt, BuildPromptOptions } from './prompt-builder.js';
+import { buildPrompt, BuildPromptOptions, Message } from './prompt-builder.js';
 import { applyWorldInfoEntry, getActiveWorldInfo } from './world-info-utils.js';
 
 export {
@@ -16,4 +16,4 @@ export {
   Generator,
   createCharacter,
 };
-export type { VersionChange, SettingsInitResult, BuildPromptOptions, FancyDropdownOptions, DropdownItem, CustomError };
+export type { VersionChange, SettingsInitResult, BuildPromptOptions, Message, FancyDropdownOptions, DropdownItem, CustomError };
