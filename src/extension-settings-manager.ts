@@ -112,14 +112,6 @@ export class ExtensionSettingsManager<T> {
       function initializeRecursively(target: any, defaults: any): boolean {
         let anyChange = false;
 
-        // Remove keys that don't exist in defaults
-        for (const key of Object.keys(target)) {
-          if (!(key in defaults)) {
-            delete target[key];
-            anyChange = true;
-          }
-        }
-
         // Initialize undefined values from defaults and handle nested objects
         for (const key of Object.keys(defaults)) {
           if (target[key] === undefined) {
