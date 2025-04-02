@@ -92,9 +92,8 @@ export function buildSortableList(selector: string | HTMLElement, options: Sorta
       display: 'flex',
       alignItems: 'center',
       padding: '8px 12px',
-      borderBottom: '1px solid var(--border-color, #eee)',
-      backgroundColor: 'var(--bg-color-secondary, #fff)',
-      color: 'var(--text-color, #333)',
+      border: '1px solid var(--SmartThemeBorderColor)',
+      color: 'var(--SmartThemeBodyColor)',
       marginBottom: '2px', // Small gap between items
     });
 
@@ -105,7 +104,7 @@ export function buildSortableList(selector: string | HTMLElement, options: Sorta
     Object.assign(dragHandle.style, {
       cursor: 'grab',
       marginRight: '10px',
-      color: 'var(--text-color-secondary, #aaa)',
+      color: 'var(--SmartThemeBodyColor)',
     });
     listItem.appendChild(dragHandle);
 
@@ -130,7 +129,6 @@ export function buildSortableList(selector: string | HTMLElement, options: Sorta
       Object.assign(toggleButton.style, {
         cursor: 'pointer',
         marginRight: '10px',
-        color: itemData.enabled ? 'var(--accent-color, #4CAF50)' : 'var(--text-color-secondary, #aaa)',
         fontSize: '1.2em', // Make toggle slightly larger
       });
       toggleButton.addEventListener('click', (e) => {
@@ -210,9 +208,6 @@ export function buildSortableList(selector: string | HTMLElement, options: Sorta
     const toggleButton = itemElement.querySelector<HTMLElement>('.toggle-button i');
     if (toggleButton && showToggleButton && (itemData.canToggle ?? true)) {
       toggleButton.className = `fas ${itemData.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}`;
-      toggleButton.parentElement!.style.color = itemData.enabled
-        ? 'var(--accent-color, #4CAF50)'
-        : 'var(--text-color-secondary, #aaa)';
     }
 
     // Update Opacity
