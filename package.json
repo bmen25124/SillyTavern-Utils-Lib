@@ -51,6 +51,10 @@
         "./types/sysprompt": {
             "types": "./dist/types/sysprompt.d.ts",
             "default": "./dist/types/sysprompt.js"
+        },
+        "./types/regex": {
+            "types": "./dist/types/regex.d.ts",
+            "default": "./dist/types/regex.js"
         }
     },
     "files": [
