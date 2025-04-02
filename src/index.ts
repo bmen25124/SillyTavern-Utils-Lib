@@ -4,6 +4,7 @@ import { DropdownItem, FancyDropdownOptions, buildFancyDropdown } from './fancy-
 import { Generator } from './generate.js';
 import { buildPresetSelect } from './preset-select.js';
 import { buildPrompt, BuildPromptOptions, Message } from './prompt-builder.js';
+import { buildSortableList, SortableListItemData, SortableListOptions } from './sortable-list.js';
 import { applyWorldInfoEntry, getActiveWorldInfo } from './world-info-utils.js';
 
 export {
@@ -15,6 +16,7 @@ export {
   buildFancyDropdown,
   Generator,
   createCharacter,
+  buildSortableList,
 };
 export type {
   VersionChange,
@@ -24,4 +26,6 @@ export type {
   FancyDropdownOptions,
   DropdownItem,
   CustomError,
+  SortableListOptions,
+  SortableListItemData,
 };
