@@ -52,7 +52,7 @@ import { metadata_keys } from '../../../../authors-note.js';
 import { getGroupDepthPrompts, selected_group, is_group_generating, groups } from '../../../../group-chats.js';
 
 // @ts-ignore
-import { regex_placement, getRegexedString } from '../../../regex/engine.js';
+import { regex_placement, getRegexedString, runRegexScript } from '../../../regex/engine.js';
 
 // @ts-ignore
 import { getCharaFilename } from '../../../../utils.js';
@@ -62,6 +62,7 @@ import { commonEnumProviders } from '../../../../slash-commands/SlashCommandComm
 
 import { InstructSettings } from './types/instruct.js';
 import { WIEntry } from './types/world-info.js';
+import { RegexScriptData } from './types/regex.js';
 
 export async function st_runCommandCallback(command: string, ...args: any[]): Promise<void> {
   // @ts-ignore
@@ -223,6 +224,14 @@ export function st_getRegexedString(
   }: { characterOverride?: string; isMarkdown?: boolean; isPrompt?: boolean; isEdit?: boolean; depth?: number },
 ): string {
   return getRegexedString(rawString, placement, { characterOverride, isMarkdown, isPrompt, isEdit, depth });
+}
+
+export function st_runRegexScript(
+  regexScript: RegexScriptData,
+  rawString: string,
+  { characterOverride = null }: { characterOverride?: any } = {},
+): string {
+  return runRegexScript(regexScript, rawString, { characterOverride });
 }
 
 export async function st_appendFileContent(message: object, messageText: string): Promise<string> {

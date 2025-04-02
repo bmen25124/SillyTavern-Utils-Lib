@@ -16,4 +16,12 @@ export {
   Generator,
   createCharacter,
 };
-export type { VersionChange, SettingsInitResult, BuildPromptOptions, Message, FancyDropdownOptions, DropdownItem, CustomError };
+export type {
+  VersionChange,
+  SettingsInitResult,
+  BuildPromptOptions,
+  Message,
+  FancyDropdownOptions,
+  DropdownItem,
+  CustomError,
+};

@@ -6,6 +6,7 @@ import { ConnectionProfile } from './profiles.js';
 import { WIEntry, WIPromptResult } from './world-info.js';
 import { ChatCompletionPreset, ChatCompletionSettings } from './chat-completion.js';
 import { TextCompletionPreset } from './text-completion.js';
+import { RegexScriptData } from './regex.js';
 
 export enum EventNames {
   APP_READY = 'app_ready',
@@ -205,6 +206,7 @@ export interface SillyTavernContext {
       target_language: string;
       auto_mode: AutoModeOptions;
     };
+    regex?: RegexScriptData[];
   } & Record<string, any>;
   saveSettingsDebounced: () => void;
   callGenericPopup: (
