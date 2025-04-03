@@ -152,22 +152,43 @@ export class ExtensionSettingsManager<T> {
       let currentFormatVersion = settings.formatVersion;
 
       try {
-        for (const change of strategy) {
-          if ((change.from === '*' || currentFormatVersion === change.from) && currentFormatVersion !== change.to) {
-            currentSettings = await change.action(currentSettings);
-            currentFormatVersion = change.to;
+        let upgraded;
+        do {
+          upgraded = false;
+          // First try to find an exact version match
+          let exactMatch = strategy.find((change) => change.from === currentFormatVersion);
+          if (exactMatch && exactMatch.to > currentFormatVersion) {
+            currentSettings = await exactMatch.action(currentSettings);
+            currentFormatVersion = exactMatch.to;
             // @ts-ignore
-            currentSettings.formatVersion = change.to;
-            const defaultVersion = (this.defaultSettings as any).version;
-            if (defaultVersion) {
-              // @ts-ignore
-              currentSettings.version = defaultVersion;
+            currentSettings.formatVersion = exactMatch.to;
+            upgraded = true;
+          } else {
+            // If no exact match found, try wildcard
+            for (const change of strategy) {
+              if (change.from === '*' && change.to > currentFormatVersion && currentFormatVersion !== change.to) {
+                currentSettings = await change.action(currentSettings);
+                currentFormatVersion = change.to;
+                // @ts-ignore
+                currentSettings.formatVersion = change.to;
+                upgraded = true;
+                break; // Only take the first wildcard match per iteration
+              }
             }
-            result.formatVersion.changed = true;
-            result.formatVersion.new = change.to;
+          }
+        } while (upgraded); // Continue upgrading while changes are being made
+
+        // Only mark as changed if any upgrades occurred
+        if (currentFormatVersion !== settings.formatVersion) {
+          result.formatVersion.changed = true;
+          result.formatVersion.new = currentFormatVersion;
+
+          const defaultVersion = (this.defaultSettings as any).version;
+          if (defaultVersion) {
+            // @ts-ignore
+            currentSettings.version = defaultVersion;
           }
         }
-
         if (result.formatVersion.changed) {
           for (const key of Object.keys(settings)) {
             delete settings[key];

@@ -315,5 +315,50 @@ describe('ExtensionSettingsManager', () => {
       expect(result.oldSettings).toEqual(oldSettings);
       expect(mockSaveSettingsDebounced).toHaveBeenCalled();
     });
+
+    it('should not allow version downgrades', async () => {
+      // Setup initial settings with higher version
+      const oldSettings = {
+        value: 'test',
+        formatVersion: 'FORMAT-0.2.0',
+      };
+
+      mockContext.extensionSettings.test = oldSettings;
+
+      const manager = new ExtensionSettingsManager('test', {
+        value: '',
+        formatVersion: 'FORMAT-0.3.0',
+      });
+
+      const result = await manager.initializeSettings({
+        strategy: [
+          {
+            from: 'FORMAT-0.2.0',
+            to: 'FORMAT-0.1.0', // Attempting to downgrade
+            action: async (prev) => ({
+              ...prev,
+              value: 'downgraded',
+            }),
+          },
+          {
+            from: '*',
+            to: 'FORMAT-0.1.0', // Attempting to downgrade with wildcard
+            action: async (prev) => ({
+              ...prev,
+              value: 'downgraded',
+            }),
+          },
+        ],
+      });
+
+      // Verify no changes were made
+      expect(result.formatVersion.changed).toBe(false);
+      expect(result.formatVersion.old).toBe('FORMAT-0.2.0');
+      expect(result.formatVersion.new).toBe('FORMAT-0.2.0');
+
+      // Verify settings weren't modified
+      expect(mockContext.extensionSettings.test).toEqual(oldSettings);
+      expect(mockSaveSettingsDebounced).not.toHaveBeenCalled();
+    });
   });
 });
