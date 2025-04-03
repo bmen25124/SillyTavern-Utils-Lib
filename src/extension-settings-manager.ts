@@ -1,7 +1,7 @@
 export interface VersionChange<F, T> {
   from: string;
   to: string;
-  action: (previous: F) => Promise<T>;
+  action: (previous: F) => Promise<T> | T;
 }
 
 export interface SettingsInitResult<T> {
@@ -103,7 +103,7 @@ export class ExtensionSettingsManager<T> {
         settings.version = version;
       }
 
-      if (formatVersion && settings.formatVersion !== formatVersion) {
+      if (formatVersion && formatVersion !== '*' && settings.formatVersion !== formatVersion) {
         result.formatVersion.changed = true;
         result.formatVersion.new = formatVersion;
         settings.formatVersion = formatVersion;
@@ -153,7 +153,7 @@ export class ExtensionSettingsManager<T> {
 
       try {
         for (const change of strategy) {
-          if (currentFormatVersion === change.from) {
+          if ((change.from === '*' || currentFormatVersion === change.from) && currentFormatVersion !== change.to) {
             currentSettings = await change.action(currentSettings);
             currentFormatVersion = change.to;
             // @ts-ignore
@@ -169,14 +169,10 @@ export class ExtensionSettingsManager<T> {
         }
 
         if (result.formatVersion.changed) {
-          Object.assign(settings, currentSettings);
-          // Delete fields that no longer exist
           for (const key of Object.keys(settings)) {
-            // @ts-ignore
-            if (!Object.keys(currentSettings).includes(key)) {
-              delete settings[key];
-            }
+            delete settings[key];
           }
+          Object.assign(settings, currentSettings);
           this.saveSettings();
         }
       } catch (error) {
