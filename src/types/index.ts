@@ -153,6 +153,7 @@ export interface FullExportData {
     tags: string[];
     character_version?: string;
     avatar: string;
+    alternate_greetings?: string[];
     extensions?: {
       depth_prompt?: {
         prompt: string;
@@ -176,7 +177,7 @@ export interface Character {
   mes_example?: string;
   tags?: string[];
   creatorcomment?: string;
-  data?: Record<string, any>;
+  data?:  {alternate_greetings?: string[]} & Record<string, any>;
 }
 
 export interface SillyTavernContext {
