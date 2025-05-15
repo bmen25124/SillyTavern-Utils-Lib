@@ -81,7 +81,7 @@ export async function buildPrompt(
     ignoreWorldInfo,
     messageIndexesBetween,
   }: BuildPromptOptions = {},
-): Promise<Message[]> {
+): Promise<{ result: Message[]; warnings?: string[] }> {
   if (!['textgenerationwebui', 'openai'].includes(api)) {
     throw new Error('Unsupported API');
   }
@@ -143,9 +143,10 @@ export async function buildPrompt(
     return typeof response === 'number' ? response : st_getMaxContextSize();
   }
 
+  let warnings: string[] = [];
   const currentMaxContext = getMaxContext();
   if (currentMaxContext <= 0) {
-    return [];
+    return { result: [], warnings };
   }
 
   const canUseTools = context.ToolManager.isToolCallingSupported();
@@ -323,8 +324,9 @@ export async function buildPrompt(
     }
 
     if (!presetName) {
+      warnings.push('No preset name provided. Using default preset.');
       await addDefaultPreset();
-      return messages;
+      return { result: messages, warnings };
     }
 
     const preset = context.getPresetManager('openai')?.getCompletionPresetByName(presetName) as
@@ -332,8 +334,9 @@ export async function buildPrompt(
       | undefined;
     if (!preset) {
       console.warn(`Preset not found: ${presetName}. Using current preset.`);
+      warnings.push(`Preset not found: ${presetName}. Using current preset.`);
       addDefaultPreset();
-      return messages;
+      return { result: messages, warnings };
     }
 
     let promptOrder = preset.prompt_order?.find((prompt) => prompt.character_id === this_chid);
@@ -342,8 +345,9 @@ export async function buildPrompt(
     }
     if (!promptOrder) {
       console.warn(`No prompt order found for preset: ${presetName}. Using current preset.`);
+      warnings.push(`No prompt order found for preset: ${presetName}. Using current preset.`);
       addDefaultPreset();
-      return messages;
+      return { result: messages, warnings };
     }
 
     const scenarioText = scenario && preset.scenario_format ? context.substituteParams(preset.scenario_format) : '';
@@ -610,5 +614,5 @@ export async function buildPrompt(
     }
   }
 
-  return messages;
+  return { result: messages, warnings };
 }

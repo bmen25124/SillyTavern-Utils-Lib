@@ -177,7 +177,7 @@ export interface Character {
   mes_example?: string;
   tags?: string[];
   creatorcomment?: string;
-  data?:  {alternate_greetings?: string[]} & Record<string, any>;
+  data?: { alternate_greetings?: string[] } & Record<string, any>;
 }
 
 export interface SillyTavernContext {
