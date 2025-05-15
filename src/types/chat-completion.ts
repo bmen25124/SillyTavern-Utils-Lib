@@ -54,7 +54,7 @@ export interface ChatCompletionPreset {
   group_nudge_prompt: string;
   stream_openai: boolean;
   prompts: PromptConfig[];
-  prompt_order: PromptOrder[];
+  prompt_order?: PromptOrder[];
   api_url_scale: string;
   show_external_models: boolean;
   assistant_prefill: string;

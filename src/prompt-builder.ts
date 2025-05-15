@@ -336,8 +336,8 @@ export async function buildPrompt(
       return messages;
     }
 
-    let promptOrder = preset.prompt_order.find((prompt) => prompt.character_id === this_chid);
-    if (!promptOrder && preset.prompt_order.length > 0) {
+    let promptOrder = preset.prompt_order?.find((prompt) => prompt.character_id === this_chid);
+    if (!promptOrder && preset.prompt_order && preset.prompt_order.length > 0) {
       promptOrder = preset.prompt_order[0];
     }
     if (!promptOrder) {
