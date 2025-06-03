@@ -1,4 +1,4 @@
-import { createCharacter, CustomError } from './character-utils.js';
+import { createCharacter, saveCharacter, CustomError } from './character-utils.js';
 import { ExtensionSettingsManager, type VersionChange, type SettingsInitResult } from './extension-settings-manager.js';
 import { DropdownItem, FancyDropdownOptions, buildFancyDropdown } from './fancy-dropdown.js';
 import { Generator } from './generate.js';
@@ -16,6 +16,7 @@ export {
   buildFancyDropdown,
   Generator,
   createCharacter,
+  saveCharacter,
   buildSortableList,
 };
 export type {

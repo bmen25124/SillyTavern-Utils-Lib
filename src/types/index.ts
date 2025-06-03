@@ -243,6 +243,7 @@ export interface SillyTavernContext {
    * Weird naming, it also updates the UI. I mainly use for update character list after importing character via API.
    */
   getCharacters: () => Promise<void>;
+  getThumbnailUrl: (type: string, file?: string) => string;
   powerUserSettings: {
     persona_description_position: number;
     persona_description: string;
