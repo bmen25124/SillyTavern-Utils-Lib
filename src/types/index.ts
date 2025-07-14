@@ -271,7 +271,9 @@ export interface SillyTavernContext {
         extractData?: boolean;
         includePreset?: boolean;
         includeInstruct?: boolean;
+        instructSettings?: Record<string, any>;
       },
+      overridePayload?: Record<string, any>,
     ) => Promise<ExtractedData | (() => AsyncGenerator<StreamResponse>)>;
     handleDropdown: (
       selector: string,
@@ -319,6 +321,15 @@ export interface SillyTavernContext {
       showSwipes?: boolean;
     },
   ): void;
+  messageFormatting: (
+    mes: string,
+    ch_name: string,
+    isSystem: boolean,
+    isUser: boolean,
+    messageId: number,
+    sanitizerOverrides?: object,
+    isReasoning?: boolean,
+  ) => string;
   saveChat: () => Promise<void>;
   chatMetadata: Record<string, any>;
   getPresetManager: (apiId?: string) => {
