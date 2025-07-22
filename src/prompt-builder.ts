@@ -29,13 +29,14 @@ import {
 } from './config.js';
 import { ChatCompletionPreset, PromptConfig } from './types/chat-completion.js';
 import { ContextSettings } from './types/context.js';
-import { ChatCompletionMessage } from './types/index.js';
+import { ChatCompletionMessage, ChatMessage } from './types/index.js';
 import { InstructSettings } from './types/instruct.js';
 import { SyspromptSettings } from './types/sysprompt.js';
 import { TextCompletionPreset } from './types/text-completion.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
+  source?: ChatMessage; // used for chat completion messages to reference the original message.
 }
 
 export interface BuildPromptOptions {
@@ -217,7 +218,7 @@ export async function buildPrompt(
   function addChatToMessages() {
     // Add messages starting from most recent to respect context limits
     let currentTokenCount = 0;
-    const chatMessages = [];
+    const chatMessages: Message[] = [];
     for (let i = coreChat.length - 1; i >= 0; i--) {
       const message = coreChat[i];
 
@@ -230,6 +231,7 @@ export async function buildPrompt(
       chatMessages.unshift({
         role: message.is_user ? 'user' : 'assistant',
         content: includeNames ? `${message.name}: ${message.mes}` : message.mes,
+        source: message,
       });
     }
 

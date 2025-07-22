@@ -332,6 +332,7 @@ export interface SillyTavernContext {
   ) => string;
   saveChat: () => Promise<void>;
   chatMetadata: Record<string, any>;
+  saveMetadataDebounced: () => void;
   getPresetManager: (apiId?: string) => {
     getCompletionPresetByName(name?: string): undefined | TextCompletionPreset | ChatCompletionPreset;
     getPresetList(): {
