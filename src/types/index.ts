@@ -103,6 +103,8 @@ export interface StreamResponse {
 export interface ChatMessage {
   name: string;
   mes: string;
+  gen_started?: string;
+  gen_finished?: string;
   is_user?: boolean;
   is_system?: boolean;
   force_avatar?: string;

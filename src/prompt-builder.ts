@@ -362,7 +362,7 @@ export async function buildPrompt(
 
     const systemPrompts: (PromptConfig & { position?: string | boolean })[] = [];
     // Create entries for system prompts
-    if (!!ignoreWorldInfo) {
+    if (!ignoreWorldInfo) {
       systemPrompts.push(
         ...[
           {
@@ -457,7 +457,15 @@ export async function buildPrompt(
     }
 
     function getPrompt(identifier: string): PromptConfig | undefined {
-      return systemPrompts.find((prompt) => prompt.identifier === identifier);
+      const sysPrompt = systemPrompts.find((prompt) => prompt.identifier === identifier);
+      if (sysPrompt) {
+        return sysPrompt;
+      }
+      const presetPrompt = preset!.prompts.find((prompt) => prompt.identifier === identifier);
+      if (presetPrompt) {
+        return presetPrompt;
+      }
+      return undefined;
     }
 
     promptOrder.order.forEach((prompt) => {
