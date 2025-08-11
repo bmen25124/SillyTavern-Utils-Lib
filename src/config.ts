@@ -59,7 +59,9 @@ import { regex_placement, getRegexedString, runRegexScript } from '../../../rege
 import { getCharaFilename } from '../../../../utils.js';
 
 // @ts-ignore
-import { commonEnumProviders } from '../../../../slash-commands/SlashCommandCommonEnumsProvider.js';
+import { enumIcons, commonEnumProviders } from '../../../../slash-commands/SlashCommandCommonEnumsProvider.js';
+// @ts-ignore
+import { enumTypes, SlashCommandEnumValue } from '../../../../slash-commands/SlashCommandEnumValue.js';
 
 import { InstructSettings } from './types/instruct.js';
 import { WIEntry } from './types/world-info.js';
@@ -293,6 +295,9 @@ export {
   regex_placement,
   systemUserName,
   system_avatar,
+  enumIcons,
   commonEnumProviders,
+  enumTypes,
+  SlashCommandEnumValue,
   world_names,
 };

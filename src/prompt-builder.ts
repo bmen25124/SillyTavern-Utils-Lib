@@ -33,6 +33,7 @@ import { ChatCompletionMessage, ChatMessage } from './types/index.js';
 import { InstructSettings } from './types/instruct.js';
 import { SyspromptSettings } from './types/sysprompt.js';
 import { TextCompletionPreset } from './types/text-completion.js';
+import { Tokenizer } from './tokenizer.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
@@ -58,6 +59,83 @@ export interface BuildPromptOptions {
     start?: number;
     end?: number;
   };
+}
+
+class TokenAwarePromptBuilder {
+  private messages: Message[] = [];
+  private tokenizer: Tokenizer;
+  readonly maxContext: number;
+  currentTokenCount = 0;
+
+  constructor(maxContext: number) {
+    this.tokenizer = new Tokenizer();
+    this.maxContext = maxContext;
+  }
+
+  getTokenCount(message: Message): number {
+    if (!message.content) return 0;
+    return message.source?.extra?.token_count ?? this.tokenizer.encode(message.content).length;
+  }
+
+  canFit(message: Message): boolean {
+    return this.currentTokenCount + this.getTokenCount(message) <= this.maxContext;
+  }
+
+  add(message: Message): boolean {
+    if (!message.content) return true;
+    const tokenCount = this.getTokenCount(message);
+    if (this.currentTokenCount + tokenCount > this.maxContext) {
+      return false;
+    }
+    this.messages.push(message);
+    this.currentTokenCount += tokenCount;
+    return true;
+  }
+
+  addFront(message: Message): boolean {
+    if (!message.content) return true;
+    const tokenCount = this.getTokenCount(message);
+    if (this.currentTokenCount + tokenCount > this.maxContext) {
+      return false;
+    }
+    this.messages.unshift(message);
+    this.currentTokenCount += tokenCount;
+    return true;
+  }
+
+  addMany(messages: Message[]): boolean {
+    let totalTokens = 0;
+    const filteredMessages = messages.filter((msg) => {
+      if (!msg.content) return true;
+      const tokenCount = this.getTokenCount(msg);
+      if (this.currentTokenCount + totalTokens + tokenCount > this.maxContext) {
+        return false;
+      }
+      totalTokens += tokenCount;
+      return true;
+    });
+
+    if (filteredMessages.length > 0) {
+      this.messages.push(...filteredMessages);
+      this.currentTokenCount += totalTokens;
+    }
+    return filteredMessages.length === messages.length;
+  }
+
+  insert(index: number, message: Message): boolean {
+    if (!message.content) return true;
+    const tokenCount = this.getTokenCount(message);
+    if (this.currentTokenCount + tokenCount > this.maxContext) {
+      return false;
+    }
+    this.messages.splice(index, 0, message);
+    this.currentTokenCount += tokenCount;
+    return true;
+  }
+
+  getMessages(): Message[] {
+    return this.messages;
+  }
 }
 
 /**
@@ -88,7 +166,6 @@ export async function buildPrompt(
   }
 
   const context = SillyTavern.getContext();
-  let messages: Message[] = [];
 
   let { description, personality, persona, scenario, mesExamples, system, jailbreak } = !ignoreCharacterFields
     ? context.getCharacterCardFields({
@@ -149,6 +226,8 @@ export async function buildPrompt(
   if (currentMaxContext <= 0) {
     return { result: [], warnings };
   }
+
+  const promptBuilder = new TokenAwarePromptBuilder(currentMaxContext);
 
   const canUseTools = context.ToolManager.isToolCallingSupported();
   const startIndex = messageIndexesBetween?.start ?? 0;
@@ -217,17 +296,9 @@ export async function buildPrompt(
 
   function addChatToMessages() {
     // Add messages starting from most recent to respect context limits
-    let currentTokenCount = 0;
     const chatMessages: Message[] = [];
     for (let i = coreChat.length - 1; i >= 0; i--) {
       const message = coreChat[i];
-
-      // Skip if adding this message would exceed context
-      if (message.extra?.token_count && currentTokenCount + message.extra.token_count > currentMaxContext) {
-        break;
-      }
-
-      currentTokenCount += message.extra?.token_count || 0;
       chatMessages.unshift({
         role: message.is_user ? 'user' : 'assistant',
         content: includeNames ? `${message.name}: ${message.mes}` : message.mes,
@@ -235,7 +306,7 @@ export async function buildPrompt(
       });
     }
 
-    messages.push(...chatMessages);
+    promptBuilder.addMany(chatMessages);
   }
 
   const textCompletion = api === 'textgenerationwebui';
@@ -291,7 +362,7 @@ export async function buildPrompt(
       customStoryString: contextPreset?.story_string,
     });
 
-    messages.push({ role: 'system', content: storyString, ignoreInstruct: true });
+    promptBuilder.add({ role: 'system', content: storyString, ignoreInstruct: true });
 
     addChatToMessages();
   } else {
@@ -322,13 +393,13 @@ export async function buildPrompt(
         false,
       );
 
-      messages.push(...prompt);
+      promptBuilder.addMany(prompt);
     }
 
     if (!presetName) {
       warnings.push('No preset name provided. Using default preset.');
       await addDefaultPreset();
-      return { result: messages, warnings };
+      return { result: promptBuilder.getMessages(), warnings };
     }
 
     const preset = context.getPresetManager('openai')?.getCompletionPresetByName(presetName) as
@@ -338,7 +409,7 @@ export async function buildPrompt(
       console.warn(`Preset not found: ${presetName}. Using current preset.`);
       warnings.push(`Preset not found: ${presetName}. Using current preset.`);
       addDefaultPreset();
-      return { result: messages, warnings };
+      return { result: promptBuilder.getMessages(), warnings };
     }
 
     let promptOrder = preset.prompt_order?.find((prompt) => prompt.character_id === this_chid);
@@ -349,7 +420,7 @@ export async function buildPrompt(
       console.warn(`No prompt order found for preset: ${presetName}. Using current preset.`);
       warnings.push(`No prompt order found for preset: ${presetName}. Using current preset.`);
       addDefaultPreset();
-      return { result: messages, warnings };
+      return { result: promptBuilder.getMessages(), warnings };
     }
 
     const scenarioText = scenario && preset.scenario_format ? context.substituteParams(preset.scenario_format) : '';
@@ -475,7 +546,7 @@ export async function buildPrompt(
 
       const collectionPrompt = getPrompt(prompt.identifier);
       if (collectionPrompt && collectionPrompt.content) {
-        messages.push({
+        promptBuilder.add({
           role: collectionPrompt.role ?? 'system',
           content: context.substituteParams(collectionPrompt.content),
         });
@@ -510,35 +581,27 @@ export async function buildPrompt(
       const hasFilter = typeof prompt.filter === 'function';
       if (hasFilter && !(await prompt.filter())) continue;
 
+      const message: Message = {
+        role: st_getPromptRole(prompt.role) ?? 'system',
+        content: prompt.value,
+      };
+
       if (prompt.position === extension_prompt_types.BEFORE_PROMPT) {
-        messages = [
-          ...messages.slice(0, prompt.depth),
-          {
-            role: st_getPromptRole(prompt.role) ?? 'system',
-            content: prompt.value,
-          },
-          ...messages.slice(prompt.depth),
-        ];
+        promptBuilder.insert(prompt.depth, message);
       } else if (prompt.position === extension_prompt_types.IN_PROMPT) {
-        messages = [
-          ...messages.slice(0, messages.length - prompt.depth!),
-          {
-            role: st_getPromptRole(prompt.role) ?? 'system',
-            content: prompt.value,
-          },
-          ...messages.slice(messages.length - prompt.depth!),
-        ];
+        const messages = promptBuilder.getMessages();
+        promptBuilder.insert(messages.length - prompt.depth!, message);
       }
     }
   }
 
   // Inject world info depth.
   for (const worldInfo of worldInfoDepth) {
-    messages = [
-      ...messages.slice(0, messages.length - worldInfo.depth),
-      { role: st_getPromptRole(worldInfo.role), content: worldInfo.entries.join('\n') },
-      ...messages.slice(messages.length - worldInfo.depth),
-    ];
+    const messages = promptBuilder.getMessages();
+    promptBuilder.insert(messages.length - worldInfo.depth, {
+      role: st_getPromptRole(worldInfo.role),
+      content: worldInfo.entries.join('\n'),
+    });
   }
 
   if (!ignoreCharacterFields) {
@@ -547,11 +610,8 @@ export async function buildPrompt(
       groupDepthPrompts
         .filter((value) => value.text)
         .forEach((value, _index) => {
-          messages = [
-            ...messages.slice(0, messages.length - value.depth),
-            { role: value.role, content: value.text },
-            ...messages.slice(messages.length - value.depth),
-          ];
+          const messages = promptBuilder.getMessages();
+          promptBuilder.insert(messages.length - value.depth, { role: value.role, content: value.text });
         });
     } else {
       const depthPromptText =
@@ -565,11 +625,11 @@ export async function buildPrompt(
         const depthPromptRole =
           context.characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default;
 
-        messages = [
-          ...messages.slice(0, messages.length - depthPromptDepth),
-          { role: st_getPromptRole(depthPromptRole), content: depthPromptText },
-          ...messages.slice(messages.length - depthPromptDepth),
-        ];
+        const messages = promptBuilder.getMessages();
+        promptBuilder.insert(messages.length - depthPromptDepth, {
+          role: st_getPromptRole(depthPromptRole),
+          content: depthPromptText,
+        });
       }
     }
   }
@@ -581,21 +641,19 @@ export async function buildPrompt(
 
     if (authorNote.prompt) {
       authorNote.prompt = st_baseChatReplace(authorNote.prompt, name1, name2);
+      const message: Message = { role: st_getPromptRole(authorNote.role), content: authorNote.prompt };
       switch (authorNote.position) {
         case extension_prompt_types.IN_PROMPT: // After first message
-          messages = [...messages.slice(0, 1), { role: 'user', content: authorNote.prompt }, ...messages.slice(1)];
+          promptBuilder.insert(1, message);
           authorNoteIndex = 1;
           break;
         case extension_prompt_types.IN_CHAT: // Depth + role in chat
-          messages = [
-            ...messages.slice(0, messages.length - authorNote.depth),
-            { role: st_getPromptRole(authorNote.role), content: authorNote.prompt },
-            ...messages.slice(messages.length - authorNote.depth),
-          ];
-          authorNoteIndex = messages.length - authorNote.depth - 1;
+          const messages = promptBuilder.getMessages();
+          authorNoteIndex = messages.length - authorNote.depth;
+          promptBuilder.insert(authorNoteIndex, message);
           break;
         case extension_prompt_types.BEFORE_PROMPT: // Before first message
-          messages.unshift({ role: 'user', content: authorNote.prompt });
+          promptBuilder.addFront(message);
           authorNoteIndex = 0;
           break;
         default:
@@ -607,22 +665,14 @@ export async function buildPrompt(
   // Add world info to author note
   if (authorNoteIndex >= 0) {
     if (anBefore.length > 0) {
-      messages = [
-        ...messages.slice(0, authorNoteIndex),
-        { role: 'system', content: anBefore.join('\n') },
-        ...messages.slice(authorNoteIndex),
-      ];
+      promptBuilder.insert(authorNoteIndex, { role: 'system', content: anBefore.join('\n') });
       authorNoteIndex++;
     }
 
     if (anAfter.length > 0) {
-      messages = [
-        ...messages.slice(0, authorNoteIndex + 1),
-        { role: 'system', content: anAfter.join('\n') },
-        ...messages.slice(authorNoteIndex + 1),
-      ];
+      promptBuilder.insert(authorNoteIndex + 1, { role: 'system', content: anAfter.join('\n') });
     }
   }
 
-  return { result: messages, warnings };
+  return { result: promptBuilder.getMessages(), warnings };
 }
