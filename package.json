@@ -1,6 +1,6 @@
 {
     "name": "sillytavern-utils-lib",
-    "version": "1.0.52",
+    "version": "1.0.53",
     "description": "Utility library for SillyTavern",
     "type": "module",
     "exports": {
