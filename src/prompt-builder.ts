@@ -104,22 +104,42 @@ class TokenAwarePromptBuilder {
   }
 
   addMany(messages: Message[]): boolean {
-    let totalTokens = 0;
-    const filteredMessages = messages.filter((msg) => {
-      if (!msg.content) return true;
-      const tokenCount = this.getTokenCount(msg);
-      if (this.currentTokenCount + totalTokens + tokenCount > this.maxContext) {
-        return false;
-      }
-      totalTokens += tokenCount;
-      return true;
-    });
+    const validMessages = messages.filter((msg) => msg.content);
+    const tokenCounts = validMessages.map((msg) => this.getTokenCount(msg));
 
-    if (filteredMessages.length > 0) {
-      this.messages.push(...filteredMessages);
-      this.currentTokenCount += totalTokens;
+    // Check if all messages can fit
+    const totalMessageTokens = tokenCounts.reduce((sum, count) => sum + count, 0);
+    if (this.currentTokenCount + totalMessageTokens <= this.maxContext) {
+      // All messages fit, add them all
+      this.messages.push(...validMessages);
+      this.currentTokenCount += totalMessageTokens;
+      return true;
     }
-    return filteredMessages.length === messages.length;
+
+    // Not all messages fit, so we need to select the most recent ones that fit
+    // Process messages from newest to oldest (reverse order)
+    let accumulatedTokens = 0;
+    const messagesToAdd: Message[] = [];
+
+    for (let i = validMessages.length - 1; i >= 0; i--) {
+      const message = validMessages[i];
+      const tokenCount = tokenCounts[i];
+
+      if (this.currentTokenCount + accumulatedTokens + tokenCount <= this.maxContext) {
+        messagesToAdd.unshift(message); // Add to front to maintain chronological order
+        accumulatedTokens += tokenCount;
+      } else {
+        // Can't fit this message or any older messages
+        break;
+      }
+    }
+
+    if (messagesToAdd.length > 0) {
+      this.messages.push(...messagesToAdd);
+      this.currentTokenCount += accumulatedTokens;
+    }
+
+    return messagesToAdd.length === validMessages.length;
   }
 
   insert(index: number, message: Message): boolean {
