@@ -299,9 +299,10 @@ export async function buildPrompt(
     const chatMessages: Message[] = [];
     for (let i = coreChat.length - 1; i >= 0; i--) {
       const message = coreChat[i];
+      const role = message.name === 'System' && !message.is_user ? 'system' : message.is_user ? 'user' : 'assistant';
       chatMessages.unshift({
-        role: message.is_user ? 'user' : 'assistant',
-        content: includeNames ? `${message.name}: ${message.mes}` : message.mes,
+        role,
+        content: includeNames && role != 'system' ? `${message.name}: ${message.mes}` : message.mes,
         source: message,
       });
     }
@@ -362,7 +363,9 @@ export async function buildPrompt(
       customStoryString: contextPreset?.story_string,
     });
 
-    promptBuilder.add({ role: 'system', content: storyString, ignoreInstruct: true });
+    if (storyString) {
+      promptBuilder.add({ role: 'system', content: storyString, ignoreInstruct: true });
+    }
 
     addChatToMessages();
   } else {
