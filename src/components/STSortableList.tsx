@@ -123,6 +123,8 @@ export const STSortableListItem: FC<STSortableListItemProps> = React.memo(
               marginRight: '10px',
               fontSize: '1.2em',
               color: enabled ? 'var(--success-color, #4CAF50)' : 'var(--SmartThemeBodyColor, #555)',
+              backgroundColor: 'transparent',
+              border: 'none',
             }}
             onClick={() => onToggle(id)}
           />
@@ -134,7 +136,12 @@ export const STSortableListItem: FC<STSortableListItemProps> = React.memo(
           <STButton
             overrideDefaults
             className="delete-button fas fa-trash-can"
-            style={{ ...iconStyle, color: 'var(--error-color, #f44336)' }}
+            style={{
+              ...iconStyle,
+              color: 'var(--error-color, #f44336)',
+              backgroundColor: 'transparent',
+              border: 'none',
+            }}
             onClick={() => onDelete(id)}
           />
         )}

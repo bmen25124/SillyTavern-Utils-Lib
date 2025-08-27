@@ -153,11 +153,11 @@ export const STConnectionProfileSelect: FC<STConnectionProfileSelectProps> = ({
 
     return () => {
       // @ts-ignore
-      globalContext.eventSource.off('CONNECTION_PROFILE_CREATED', handleCreate);
+      globalContext.eventSource.removeListener('CONNECTION_PROFILE_CREATED', handleCreate);
       // @ts-ignore
-      globalContext.eventSource.off('CONNECTION_PROFILE_UPDATED', handleUpdate);
+      globalContext.eventSource.removeListener('CONNECTION_PROFILE_UPDATED', handleUpdate);
       // @ts-ignore
-      globalContext.eventSource.off('CONNECTION_PROFILE_DELETED', handleDelete);
+      globalContext.eventSource.removeListener('CONNECTION_PROFILE_DELETED', handleDelete);
     };
   }, [isEnabled, selectedId, allowedTypes, connectApiMap, onChange, onCreate, onUpdate, onDelete]);
 
