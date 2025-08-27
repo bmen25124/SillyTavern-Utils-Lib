@@ -56,12 +56,18 @@ import { getGroupDepthPrompts, selected_group, is_group_generating, groups } fro
 import { regex_placement, getRegexedString, runRegexScript } from '../../../regex/engine.js';
 
 // @ts-ignore
-import { getCharaFilename } from '../../../../utils.js';
+import { getCharaFilename, removeFromArray, runAfterAnimation } from '../../../../utils.js';
 
 // @ts-ignore
 import { enumIcons, commonEnumProviders } from '../../../../slash-commands/SlashCommandCommonEnumsProvider.js';
 // @ts-ignore
 import { enumTypes, SlashCommandEnumValue } from '../../../../slash-commands/SlashCommandEnumValue.js';
+
+// @ts-ignore
+import { fixToastrForDialogs, Popup as STPopup } from '../../../../popup.js';
+
+// @ts-ignore
+import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
 
 import { InstructSettings } from './types/instruct.js';
 import { WIEntry } from './types/world-info.js';
@@ -300,4 +306,9 @@ export {
   enumTypes,
   SlashCommandEnumValue,
   world_names,
+  dialogPolyfill,
+  fixToastrForDialogs,
+  removeFromArray,
+  runAfterAnimation,
+  STPopup,
 };

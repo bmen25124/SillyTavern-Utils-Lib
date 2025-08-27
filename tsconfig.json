@@ -6,6 +6,7 @@
             "dom.iterable",
             "ESNext"
         ],
+        "jsx": "react-jsx",
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
