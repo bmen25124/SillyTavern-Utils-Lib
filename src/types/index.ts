@@ -100,6 +100,23 @@ export interface StreamResponse {
   };
 }
 
+export interface SendRequestCustomOptions {
+  stream?: boolean;
+  signal?: AbortSignal;
+  extractData?: boolean;
+  includePreset?: boolean;
+  includeInstruct?: boolean;
+  instructSettings?: Record<string, any>;
+}
+
+export interface SendRequestParams {
+  profileId: string;
+  prompt: string | Message[];
+  maxTokens: number;
+  custom?: SendRequestCustomOptions;
+  overridePayload?: Record<string, any>;
+}
+
 export interface ChatMessage {
   name: string;
   mes: string;
@@ -267,14 +284,7 @@ export interface SillyTavernContext {
       profileId: string,
       prompt: string | Message[],
       maxTokens: number,
-      custom?: {
-        stream?: boolean;
-        signal?: AbortSignal;
-        extractData?: boolean;
-        includePreset?: boolean;
-        includeInstruct?: boolean;
-        instructSettings?: Record<string, any>;
-      },
+      custom?: SendRequestCustomOptions,
       overridePayload?: Record<string, any>,
     ) => Promise<ExtractedData | (() => AsyncGenerator<StreamResponse>)>;
     handleDropdown: (

@@ -1,5 +1,4 @@
-import { Message } from './prompt-builder.js';
-import { StreamResponse, ExtractedData } from './types/index.js';
+import { StreamResponse, ExtractedData, SendRequestParams } from './types/index.js';
 
 export interface GenerateOptions {
   abortController?: AbortController;
@@ -51,21 +50,7 @@ export class Generator {
   /**
    * @returns return value is not important because request would be finished anyway. So use "options".
    */
-  public async generateRequest(
-    requestParams: {
-      profileId: string;
-      prompt: string | Message[];
-      maxTokens: number;
-      custom?: {
-        stream?: boolean;
-        signal?: AbortSignal;
-        extractData?: boolean;
-        includePreset?: boolean;
-        includeInstruct?: boolean;
-      };
-    },
-    options?: GenerateOptions,
-  ): Promise<string> {
+  public async generateRequest(requestParams: SendRequestParams, options?: GenerateOptions): Promise<string> {
     const context = SillyTavern.getContext();
     const requestId = context.uuidv4();
     const isStream = requestParams?.custom?.stream ?? false;
@@ -86,6 +71,7 @@ export class Generator {
           requestParams.prompt,
           requestParams.maxTokens,
           requestParams.custom,
+          requestParams.overridePayload,
         );
 
         if (this.requestMap.get(requestId)) {
@@ -111,6 +97,7 @@ export class Generator {
           requestParams.prompt,
           requestParams.maxTokens,
           requestParams.custom,
+          requestParams.overridePayload,
         );
 
         if (options?.onStart) {
