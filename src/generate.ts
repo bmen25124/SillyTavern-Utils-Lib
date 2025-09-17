@@ -5,7 +5,7 @@ export interface GenerateOptions {
   /**
    * Depends on stream mode, "data" or "chunk" would be avaiable.
    */
-  onEntry?: (data: ExtractedData | StreamResponse) => void;
+  onEntry?: (uuid: string, data: ExtractedData | StreamResponse) => void;
 
   onStart?: (uuid: string) => void;
 
@@ -14,7 +14,7 @@ export interface GenerateOptions {
    * If error occurs during request, it will be passed.
    * If "data" and "error" is undefined, it means the request is cancelled.
    */
-  onFinish?: (data?: ExtractedData | StreamResponse, error?: Error) => void;
+  onFinish?: (uuid: string, data?: ExtractedData | StreamResponse, error?: Error) => void;
 }
 
 interface RequestState {
@@ -41,7 +41,7 @@ export class Generator {
     }
 
     if (state.options?.onFinish) {
-      state.options.onFinish();
+      state.options.onFinish(requestId);
     }
 
     this.requestMap.delete(requestId);
@@ -76,16 +76,16 @@ export class Generator {
 
         if (this.requestMap.get(requestId)) {
           if (options?.onEntry) {
-            options.onEntry(response as ExtractedData);
+            options.onEntry(requestId, response as ExtractedData);
           }
 
           if (options?.onFinish) {
-            options.onFinish(response as ExtractedData);
+            options.onFinish(requestId, response as ExtractedData);
           }
         }
       } catch (error) {
         if (options?.onFinish) {
-          options.onFinish(undefined, error as Error);
+          options.onFinish(requestId, undefined, error as Error);
         }
       } finally {
         this.requestMap.delete(requestId);
@@ -108,15 +108,15 @@ export class Generator {
         for await (const chunk of (responseGen as () => AsyncGenerator<StreamResponse>)()) {
           lastChunk = chunk;
           if (options?.onEntry) {
-            options.onEntry(chunk);
+            options.onEntry(requestId, chunk);
           }
         }
         if (options?.onFinish) {
-          options.onFinish(lastChunk);
+          options.onFinish(requestId, lastChunk);
         }
       } catch (error) {
         if (options?.onFinish) {
-          options.onFinish(undefined, error as Error);
+          options.onFinish(requestId, undefined, error as Error);
         }
       } finally {
         this.requestMap.delete(requestId);

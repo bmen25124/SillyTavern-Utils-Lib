@@ -16,6 +16,7 @@ import {
   main_api,
   systemUserName,
   system_avatar,
+  sendMessageAsUser,
   // @ts-ignore
 } from '../../../../../script.js';
 
@@ -29,6 +30,16 @@ import {
   world_names,
   // @ts-ignore
 } from '../../../../world-info.js';
+
+import {
+  sendNarratorMessage,
+  // @ts-ignore
+} from '../../../../slash-commands.js';
+
+import {
+  user_avatar,
+  // @ts-ignore
+} from '../../../../personas.js';
 
 // @ts-ignore
 import { formatInstructModeExamples, formatInstructModeSystemPrompt } from '../../../../instruct-mode.js';
@@ -280,6 +291,20 @@ export function st_createWorldInfoEntry(
   return createWorldInfoEntry(_name, data);
 }
 
+export async function sendChatMessage(
+  message: string,
+  role: 'user' | 'assistant' | 'system',
+  name: string,
+  avatar: string,
+  insertAt?: number,
+): Promise<void> {
+  if (role === 'user' || role === 'assistant') {
+    await sendMessageAsUser(message, null, insertAt, false, name, avatar);
+  } else {
+    await sendNarratorMessage({ name, at: insertAt }, message);
+  }
+}
+
 export {
   persona_description_positions,
   name1,
@@ -311,4 +336,5 @@ export {
   removeFromArray,
   runAfterAnimation,
   STPopup,
+  user_avatar,
 };
