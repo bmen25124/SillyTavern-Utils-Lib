@@ -33,6 +33,7 @@ import {
 
 import {
   sendNarratorMessage,
+  sendMessageAs,
   // @ts-ignore
 } from '../../../../slash-commands.js';
 
@@ -295,18 +296,18 @@ export function st_createWorldInfoEntry(
 export async function sendChatMessage(
   message: string,
   role: 'user' | 'assistant' | 'system',
-  name: string,
-  avatar: string,
+  name?: string,
+  avatar?: string,
   insertAt?: number,
-  dontTriggerEvent?: boolean
 ): Promise<void> {
-  if (role === 'user' || role === 'assistant') {
-    await sendMessageAsUser(message, null, insertAt, false, name, avatar);
-    if (!dontTriggerEvent) {
-      const eventName = role === 'user' ? EventNames.USER_MESSAGE_RENDERED : EventNames.CHARACTER_MESSAGE_RENDERED;
-      const context = SillyTavern.getContext()
-      context.eventSource.emit(eventName, context.chat.length - 1);
-    }
+  if (role === 'user') {
+    await sendMessageAsUser(message, null, insertAt, false, name ?? name1, user_avatar ?? avatar);
+    const context = SillyTavern.getContext();
+    context.eventSource.emit(EventNames.USER_MESSAGE_RENDERED, context.chat.length - 1);
+  } else if (role === 'assistant') {
+    const providedName = name ?? name2;
+    const providedAvatar = avatar ?? SillyTavern.getContext().characters[this_chid].avatar;
+    await sendMessageAs({ name: providedName, at: insertAt, avatar: providedAvatar }, message);
   } else {
     await sendNarratorMessage({ name, at: insertAt }, message);
   }
