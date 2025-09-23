@@ -83,6 +83,7 @@ import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
 import { InstructSettings } from './types/instruct.js';
 import { WIEntry } from './types/world-info.js';
 import { RegexScriptData } from './types/regex.js';
+import { EventNames } from './types/index.js';
 
 export async function st_runCommandCallback(command: string, ...args: any[]): Promise<void> {
   // @ts-ignore
@@ -297,9 +298,15 @@ export async function sendChatMessage(
   name: string,
   avatar: string,
   insertAt?: number,
+  dontTriggerEvent?: boolean
 ): Promise<void> {
   if (role === 'user' || role === 'assistant') {
     await sendMessageAsUser(message, null, insertAt, false, name, avatar);
+    if (!dontTriggerEvent) {
+      const eventName = role === 'user' ? EventNames.USER_MESSAGE_RENDERED : EventNames.CHARACTER_MESSAGE_RENDERED;
+      const context = SillyTavern.getContext()
+      context.eventSource.emit(eventName, context.chat.length - 1);
+    }
   } else {
     await sendNarratorMessage({ name, at: insertAt }, message);
   }
