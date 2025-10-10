@@ -126,6 +126,9 @@ export interface ChatMessage {
   is_system?: boolean;
   force_avatar?: string;
   original_avatar?: string;
+  swipes?: string[];
+  swipe_info?: Record<string, any>;
+  swipe_id?: number;
   extra?: {
     reasoning?: string;
     reasoning_duration?: number;
