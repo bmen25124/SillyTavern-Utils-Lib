@@ -4,28 +4,32 @@ import {
   st_getCharaFilename,
   WI_METADATA_KEY,
   world_info,
+  world_names,
 } from './config.js';
 import { WIEntry } from './types/world-info.js';
 
-export type getActiveWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
+export type getWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'persona';
 
 /**
  * @returns Entries by world name. <worldName, entries[]>
  */
-export async function getActiveWorldInfo(
-  include: getActiveWorldInfoInclude[],
+export async function getWorldInfo(
+  include: getWorldInfoInclude[],
+  onlySelected?: boolean,
   targetCharacterIndex?: number,
 ): Promise<Record<string, WIEntry[]>> {
   function includedType(type: string): boolean {
-    return include.includes('all') || include.includes(type as getActiveWorldInfoInclude);
+    return include.includes('all') || include.includes(type as getWorldInfoInclude);
   }
 
   const context = SillyTavern.getContext();
   let entries: Record<string, WIEntry[]> = {};
 
+  const worldNames = onlySelected ? selected_world_info : world_names;
+
   const isGlobal = includedType('global');
-  if (isGlobal && selected_world_info?.length) {
-    for (const worldName of selected_world_info) {
+  if (isGlobal && worldNames?.length) {
+    for (const worldName of worldNames) {
       const worldInfo = await context.loadWorldInfo(worldName);
       if (!worldInfo) {
         continue;

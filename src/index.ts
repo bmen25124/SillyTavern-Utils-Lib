@@ -5,13 +5,13 @@ import { Generator } from './generate.js';
 import { buildPresetSelect } from './preset-select.js';
 import { buildPrompt, BuildPromptOptions, Message } from './prompt-builder.js';
 import { buildSortableList, SortableListItemData, SortableListOptions } from './sortable-list.js';
-import { applyWorldInfoEntry, getActiveWorldInfo } from './world-info-utils.js';
+import { applyWorldInfoEntry, getWorldInfo } from './world-info-utils.js';
 
 export {
   buildPresetSelect,
   buildPrompt,
   ExtensionSettingsManager,
-  getActiveWorldInfo,
+  getWorldInfo,
   applyWorldInfoEntry,
   buildFancyDropdown,
   Generator,
