@@ -13,7 +13,7 @@ export type getWorldInfoInclude = 'all' | 'global' | 'character' | 'chat' | 'per
 /**
  * @returns Entries by world name. <worldName, entries[]>
  */
-export async function getWorldInfo(
+export async function getWorldInfos(
   include: getWorldInfoInclude[],
   onlySelected?: boolean,
   targetCharacterIndex?: number,
@@ -30,7 +30,7 @@ export async function getWorldInfo(
   const isGlobal = includedType('global');
   if (isGlobal && worldNames?.length) {
     for (const worldName of worldNames) {
-      const worldInfo = await context.loadWorldInfo(worldName);
+      const worldInfo = await getWorldInfo(worldName);
       if (!worldInfo) {
         continue;
       }
@@ -38,7 +38,7 @@ export async function getWorldInfo(
       if (!entries[worldName]) {
         entries[worldName] = [];
       }
-      Object.values(worldInfo.entries).forEach((entry) => {
+      Object.values(worldInfo).forEach((entry) => {
         entries[worldName].push(entry);
       });
     }
@@ -180,4 +180,12 @@ export async function applyWorldInfoEntry({
     entry: targetEntry,
     operation: operationResult,
   };
+}
+
+export async function getWorldInfo(worldName: string): Promise<WIEntry[] | null> {
+  const worldInfo = await SillyTavern.getContext().loadWorldInfo(worldName);
+  if (!worldInfo) {
+    return null;
+  }
+  return Object.values(worldInfo.entries);
 }
