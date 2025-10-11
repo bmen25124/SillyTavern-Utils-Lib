@@ -27,6 +27,8 @@ export interface STFancyDropdownProps {
   searchPlaceholder?: string;
   searchNoResultsText?: string;
   searchFuseOptions?: IFuseOptions<DropdownItem>;
+  inputClasses?: string;
+  containerClasses?: string;
 }
 
 /**
@@ -46,6 +48,8 @@ export const STFancyDropdown: FC<STFancyDropdownProps> = ({
   searchPlaceholder = 'Search...',
   searchNoResultsText = 'No results found',
   searchFuseOptions,
+  inputClasses,
+  containerClasses,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,7 +127,7 @@ export const STFancyDropdown: FC<STFancyDropdownProps> = ({
   return (
     <div
       ref={containerRef}
-      className="fancy-dropdown-container"
+      className={`fancy-dropdown-container ${containerClasses ?? ''}`}
       style={{
         position: 'relative',
         userSelect: 'none',
@@ -189,6 +193,7 @@ export const STFancyDropdown: FC<STFancyDropdownProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
+                className={inputClasses}
               />
             </div>
           )}
