@@ -28,6 +28,7 @@ import {
   METADATA_KEY,
   world_info,
   world_names,
+  createNewWorldInfo,
   // @ts-ignore
 } from '../../../../world-info.js';
 
@@ -291,6 +292,21 @@ export function st_createWorldInfoEntry(
   data: { entries: Record<number, WIEntry> },
 ): WIEntry | undefined {
   return createWorldInfoEntry(_name, data);
+}
+
+/**
+ * Creates a new world info/lorebook with the given name.
+ * Checks if a world with the same name already exists, providing a warning or optionally a user confirmation dialog.
+ *
+ * @param {string} worldName - The name of the new world info
+ * @param {Object} options - Optional parameters
+ * @param {boolean} [options.interactive=false] - Whether to show a confirmation dialog when overwriting an existing world
+ */
+export async function st_createNewWorldInfo(
+  worldName: string,
+  { interactive = false }: { interactive?: boolean } = {},
+): Promise<boolean> {
+  return await createNewWorldInfo(worldName, { interactive });
 }
 
 export async function sendChatMessage(
