@@ -201,6 +201,7 @@ export interface Character {
   mes_example?: string;
   tags?: string[];
   creatorcomment?: string;
+  json_data?: string;
   data?: { alternate_greetings?: string[] } & Record<string, any>;
 }
 
