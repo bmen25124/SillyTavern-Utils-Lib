@@ -162,6 +162,7 @@ export interface FullExportData {
   creatorcomment?: string;
   tags?: string[];
   avatar: string;
+  json_data?: string;
   data: {
     name: string;
     description: string;
@@ -176,6 +177,7 @@ export interface FullExportData {
     character_version?: string;
     avatar: string;
     alternate_greetings?: string[];
+    json_data?: string;
     extensions?: {
       depth_prompt?: {
         prompt: string;
