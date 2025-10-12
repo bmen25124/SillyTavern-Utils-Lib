@@ -202,12 +202,24 @@ export interface Character {
   data?: { alternate_greetings?: string[] } & Record<string, any>;
 }
 
+export interface SlashCommandClosureResult {
+  interrupt: boolean;
+  pipe?: string;
+  isBreak: boolean;
+  isAborted: boolean;
+  isQuietlyAborted: boolean;
+  abortReason?: string;
+  isError: boolean;
+  errorMessage?: string;
+}
+
 export interface SillyTavernContext {
   // Fuck commmand that types, I'll do it later.
   SlashCommandParser: any;
   SlashCommand: any;
   SlashCommandArgument: any;
   SlashCommandNamedArgument: any;
+  executeSlashCommandsWithOptions(text: string, options?: any): Promise<SlashCommandClosureResult>
   ARGUMENT_TYPE: any;
   eventSource: EventEmitter;
   getRequestHeaders: () => {
@@ -336,6 +348,13 @@ export interface SillyTavernContext {
       showSwipes?: boolean;
     },
   ): void;
+  /**
+   * Deletes a message from the chat by its ID, optionally asking for confirmation.
+   * @param {number} id The ID of the message to delete.
+   * @param {number|boolean} [swipeDeletion=false] If true, deletes the swipe associated with the message. If a number, deletes the swipe with that index.
+   * @param {boolean} [askConfirmation=false] Whether to ask for confirmation before deleting.
+   */
+  deleteMessage: (id: number, swipeDeletion?: number | boolean, askConfirmation?: boolean) => Promise<void>;
   messageFormatting: (
     mes: string,
     ch_name: string,
