@@ -222,7 +222,7 @@ export interface SillyTavernContext {
   SlashCommand: any;
   SlashCommandArgument: any;
   SlashCommandNamedArgument: any;
-  executeSlashCommandsWithOptions(text: string, options?: any): Promise<SlashCommandClosureResult>
+  executeSlashCommandsWithOptions(text: string, options?: any): Promise<SlashCommandClosureResult>;
   ARGUMENT_TYPE: any;
   eventSource: EventEmitter;
   getRequestHeaders: () => {

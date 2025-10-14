@@ -36,7 +36,9 @@ export interface STPresetSelectProps {
    */
   onCreate?: (
     newValue: string,
-  ) => Promise<{ confirmed: boolean; value?: string }> | { confirmed: boolean; value?: string };
+  ) =>
+    | Promise<{ confirmed: boolean; value?: string | PresetItem }>
+    | { confirmed: boolean; value?: string | PresetItem };
   /**
    * A callback fired when the user clicks 'Rename'.
    * Should handle validation and return a confirmation.
@@ -44,7 +46,9 @@ export interface STPresetSelectProps {
   onRename?: (
     oldValue: string,
     newValue: string,
-  ) => Promise<{ confirmed: boolean; value?: string }> | { confirmed: boolean; value?: string };
+  ) =>
+    | Promise<{ confirmed: boolean; value?: string | PresetItem }>
+    | { confirmed: boolean; value?: string | PresetItem };
   /**
    * A callback fired when the user clicks 'Delete'.
    * Should return `true` to confirm deletion.
@@ -88,16 +92,19 @@ export const STPresetSelect: FC<STPresetSelectProps> = ({
       return;
     }
 
-    let finalValue = trimmedValue;
+    let newItem: PresetItem = { value: trimmedValue, label: trimmedValue };
     if (onCreate) {
       const result = await Promise.resolve(onCreate(trimmedValue));
       if (!result.confirmed) return;
       if (result.value) {
-        finalValue = result.value;
+        if (typeof result.value === 'string') {
+          newItem = { value: result.value, label: result.value };
+        } else {
+          newItem = result.value;
+        }
       }
     }
 
-    const newItem: PresetItem = { value: finalValue, label: finalValue };
     onItemsChange([...items, newItem]);
     onChange(newItem.value, value);
   };
@@ -115,7 +122,7 @@ export const STPresetSelect: FC<STPresetSelectProps> = ({
     const newValue = await globalContext.Popup.show.input(
       `Rename ${label}`,
       `Please enter a new name for "${selectedItem.label}":`,
-      selectedItem.value,
+      selectedItem.label,
     );
     if (!newValue || newValue.trim() === '' || newValue.trim() === selectedItem.value) return;
     const trimmedValue = newValue.trim();
@@ -125,20 +132,22 @@ export const STPresetSelect: FC<STPresetSelectProps> = ({
       return;
     }
 
-    let finalValue = trimmedValue;
+    let finalItem: PresetItem = { value: trimmedValue, label: trimmedValue };
     if (onRename) {
       const result = await Promise.resolve(onRename(selectedItem.value, trimmedValue));
       if (!result.confirmed) return;
       if (result.value) {
-        finalValue = result.value;
+        if (typeof result.value === 'string') {
+          finalItem = { value: result.value, label: result.value };
+        } else {
+          finalItem = result.value;
+        }
       }
     }
 
-    const newItems = items.map((item) =>
-      item.value === selectedItem.value ? { value: finalValue, label: finalValue } : item,
-    );
+    const newItems = items.map((item) => (item.value === selectedItem.value ? finalItem : item));
     onItemsChange(newItems);
-    onChange(finalValue, value);
+    onChange(finalItem.value, value);
   };
 
   const handleDelete = async () => {
