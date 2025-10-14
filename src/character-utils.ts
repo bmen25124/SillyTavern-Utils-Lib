@@ -42,69 +42,38 @@ export async function createCharacter(data: FullExportData, updateUI?: boolean) 
 }
 
 /**
+ * Saves character data by merging new attributes into the existing character card
+ * using the `/api/characters/merge-attributes` endpoint.
+ *
+ * This function updates character data, not the avatar image file itself.
+ * The `data.avatar` property must be the character's filename (e.g., "bob.png")
+ * to identify which character to update on the backend.
+ *
+ * @param {Partial<Character> & { avatar: string }} data - An object with the character
+ *   attributes to update. The `avatar` field (filename) is required.
+ * @param {boolean} [updateUI=false] - If true, refreshes the character list UI after saving.
  * @throws {CustomError<Response>}
  */
-export async function saveCharacter(data: Character, updateUI?: boolean) {
+export async function saveCharacter(data: Partial<Character> & { avatar: string }, updateUI?: boolean) {
   const context = SillyTavern.getContext();
-  const formData = new FormData();
 
-  formData.append('ch_name', data.name);
-  formData.append('avatar_url', data.avatar ?? '');
-  formData.append('description', data.description ?? '');
-  formData.append('first_mes', data.first_mes ?? '');
-  formData.append('scenario', data.scenario ?? '');
-  formData.append('personality', data.personality ?? '');
-  formData.append('mes_example', data.mes_example ?? '');
-  formData.append('creatorcomment', data.creatorcomment ?? '');
-  formData.append('tags', (data.tags ?? []).join(','));
-
-  const avatarUrl = context.getThumbnailUrl('avatar', data.avatar);
-  const avatarBlob = await fetch(avatarUrl).then((res) => res.blob());
-  const avatarFile = new File([avatarBlob], 'avatar.png', { type: 'image/png' });
-  formData.append('avatar', avatarFile);
-
-  const charInnerData = data.data || {};
-
-  formData.append('creator', charInnerData.creator ?? '');
-  formData.append('character_version', charInnerData.character_version ?? '');
-  formData.append('creator_notes', charInnerData.creator_notes ?? '');
-  formData.append('system_prompt', charInnerData.system_prompt ?? '');
-  formData.append('post_history_instructions', charInnerData.post_history_instructions ?? '');
-
-  const extensions = charInnerData.extensions || {};
-  formData.append('chat', (data as any).chat ?? '');
-  formData.append('create_date', (data as any).create_date ?? '');
-  formData.append('last_mes', (data as any).last_mes ?? '');
-  formData.append('talkativeness', extensions.talkativeness ?? '');
-  formData.append('fav', String(extensions.fav ?? false));
-  formData.append('world', extensions.world ?? '');
-
-  const depthPrompt = extensions.depth_prompt || {};
-  formData.append('depth_prompt_prompt', depthPrompt.prompt ?? '');
-  formData.append('depth_prompt_depth', String(depthPrompt.depth ?? 0));
-  formData.append('depth_prompt_role', depthPrompt.role ?? '');
-
-  if (Array.isArray(charInnerData.alternate_greetings)) {
-    for (const value of charInnerData.alternate_greetings) {
-      formData.append('alternate_greetings', value);
-    }
+  if (!data.avatar) {
+    throw new Error('`data.avatar` (character filename) is required to save character attributes.');
   }
 
-  formData.append('json_data', JSON.stringify(data));
-
   const headers = context.getRequestHeaders();
-  // @ts-ignore
-  delete headers['Content-Type'];
 
-  const response = await fetch('/api/characters/edit', {
+  const response = await fetch('/api/characters/merge-attributes', {
     method: 'POST',
     headers,
-    body: formData,
+    body: JSON.stringify(data),
     cache: 'no-cache',
   });
 
   if (!response.ok) {
-    throw new CustomError(response.statusText, response);
+    // Attempt to parse a JSON error response from the server for a better error message.
+    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    throw new CustomError(errorData.message || `Request failed with status ${response.status}`, response);
   }
 
   if (updateUI) {
