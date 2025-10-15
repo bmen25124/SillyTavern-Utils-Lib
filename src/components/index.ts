@@ -9,7 +9,7 @@ import {
   STConnectionProfileSelectProps,
   isProfileSupported,
 } from './ConnectionProfileSelect.js';
-import { PresetItem, STPresetSelect, STPresetSelectProps } from './STPresetSelect.js';
+import { PresetButtonDef, PresetItem, STPresetSelect, STPresetSelectProps } from './STPresetSelect.js';
 import {
   SortableListItemData,
   STSortableList,
@@ -41,6 +41,7 @@ export type {
   STConnectionProfileSelectProps,
   STPresetSelectProps,
   PresetItem,
+  PresetButtonDef,
   STSortableListItemProps,
   STSortableListProps,
   SortableListItemData,
