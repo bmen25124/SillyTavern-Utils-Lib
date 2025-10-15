@@ -8,12 +8,20 @@ interface PopupProps {
   type: POPUP_TYPE;
   inputValue?: string;
   options?: PopupOptions;
+  preventEscape?: boolean;
   onComplete: (value: any) => void;
 }
 
 const globalContext = SillyTavern.getContext();
 
-export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', options = {}, onComplete }) => {
+export const Popup: React.FC<PopupProps> = ({
+  content,
+  type,
+  inputValue = '',
+  options = {},
+  preventEscape = false,
+  onComplete,
+}) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const mainInputRef = useRef<HTMLTextAreaElement>(null);
   const [isClosingPrevented, setIsClosingPrevented] = useState(false);
@@ -35,6 +43,19 @@ export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', op
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
+
+    // Add this handler
+    const handleCancel = (event: Event) => {
+      // Always prevent the browser's default closing action.
+      event.preventDefault();
+
+      // If we are NOT preventing escape, then manually trigger our own close logic.
+      if (!preventEscape) {
+        handleComplete(POPUP_RESULT.CANCELLED);
+      }
+    };
+
+    dialog.addEventListener('cancel', handleCancel);
 
     // Update the popup reference
     popupRef.current.dlg = dialog;
@@ -63,6 +84,7 @@ export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', op
       removeFromArray(STPopup.util.popups, popupRef.current);
       // Don't call dialog.close() here since it's handled in handleComplete
       fixToastrForDialogs();
+      dialog.removeEventListener('cancel', handleCancel);
     };
   }, []);
 
