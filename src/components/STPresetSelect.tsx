@@ -9,6 +9,21 @@ export interface PresetItem {
   label: string;
 }
 
+export interface PresetButtonDef {
+  /** A unique key for this button. */
+  key: string;
+  /** The FontAwesome icon class for the button. */
+  icon: string;
+  /** The title/tooltip for the button. */
+  title: string;
+  /** A callback fired when the button is clicked. */
+  onClick: () => void;
+  /** Whether the button should be disabled. Defaults to `false`. */
+  disabled?: boolean;
+  /** An i18n key for the title. */
+  i18n?: string;
+}
+
 export interface STPresetSelectProps {
   /** The currently selected value. */
   value?: string;
@@ -54,6 +69,8 @@ export interface STPresetSelectProps {
    * Should return `true` to confirm deletion.
    */
   onDelete?: (value: string) => Promise<boolean> | boolean;
+  /** A list of additional buttons to display next to the preset select. */
+  buttons?: PresetButtonDef[];
 }
 
 /**
@@ -73,6 +90,7 @@ export const STPresetSelect: FC<STPresetSelectProps> = ({
   onCreate,
   onRename,
   onDelete,
+  buttons,
 }) => {
   const selectedItem = useMemo(() => items.find((item) => item.value === value), [items, value]);
 
@@ -220,6 +238,16 @@ export const STPresetSelect: FC<STPresetSelectProps> = ({
           data-i18n={`[title]Delete selected ${label}`}
         />
       )}
+      {buttons?.map((button) => (
+        <STButton
+          key={button.key}
+          className={button.icon}
+          title={button.title}
+          onClick={button.onClick}
+          disabled={button.disabled}
+          data-i18n={button.i18n ? `[title]${button.i18n}` : undefined}
+        />
+      ))}
     </div>
   );
 };
