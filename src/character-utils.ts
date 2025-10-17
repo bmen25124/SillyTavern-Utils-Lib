@@ -61,6 +61,9 @@ export async function saveCharacter(data: Partial<Character> & { avatar: string 
     throw new Error('`data.avatar` (character filename) is required to save character attributes.');
   }
 
+  delete data?.json_data;
+  delete data?.data?.json_data;
+
   const headers = context.getRequestHeaders();
 
   const response = await fetch('/api/characters/merge-attributes', {
