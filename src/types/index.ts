@@ -354,10 +354,10 @@ export interface SillyTavernContext {
   /**
    * Deletes a message from the chat by its ID, optionally asking for confirmation.
    * @param {number} id The ID of the message to delete.
-   * @param {number|boolean} [swipeDeletion=false] If true, deletes the swipe associated with the message. If a number, deletes the swipe with that index.
+   * @param {number} [swipeDeletionIndex] Deletes the swipe with that index.
    * @param {boolean} [askConfirmation=false] Whether to ask for confirmation before deleting.
    */
-  deleteMessage: (id: number, swipeDeletion?: number | boolean, askConfirmation?: boolean) => Promise<void>;
+  deleteMessage: (id: number, swipeDeletionIndex?: number, askConfirmation?: boolean) => Promise<void>;
   messageFormatting: (
     mes: string,
     ch_name: string,
