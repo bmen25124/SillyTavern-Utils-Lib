@@ -5,16 +5,16 @@ export interface GenerateOptions {
   /**
    * Depends on stream mode, "data" or "chunk" would be avaiable.
    */
-  onEntry?: (uuid: string, data: ExtractedData | StreamResponse) => void;
+  onEntry?: (uuid: string, data: ExtractedData | StreamResponse) => void | Promise<void>;
 
-  onStart?: (uuid: string) => void;
+  onStart?: (uuid: string) => void | Promise<void>;
 
   /**
    * Depends on stream mode, "data" or "chunk" would be avaiable.
    * If error occurs during request, it will be passed.
    * If "data" and "error" is undefined, it means the request is cancelled.
    */
-  onFinish?: (uuid: string, data?: ExtractedData | StreamResponse, error?: Error) => void;
+  onFinish?: (uuid: string, data?: ExtractedData | StreamResponse, error?: Error) => void | Promise<void>;
 }
 
 interface RequestState {
@@ -30,7 +30,7 @@ export class Generator {
     this.requestMap = new Map();
   }
 
-  public abortRequest(requestId: string): void {
+  public async abortRequest(requestId: string): Promise<void> {
     const state = this.requestMap.get(requestId);
     if (!state) return;
 
@@ -41,7 +41,7 @@ export class Generator {
     }
 
     if (state.options?.onFinish) {
-      state.options.onFinish(requestId);
+      await state.options.onFinish(requestId);
     }
 
     this.requestMap.delete(requestId);
@@ -64,7 +64,7 @@ export class Generator {
     if (!isStream) {
       try {
         if (options?.onStart) {
-          options.onStart(requestId);
+          await options.onStart(requestId);
         }
         const response = await context.ConnectionManagerRequestService.sendRequest(
           requestParams.profileId,
@@ -76,16 +76,16 @@ export class Generator {
 
         if (this.requestMap.get(requestId)) {
           if (options?.onEntry) {
-            options.onEntry(requestId, response as ExtractedData);
+            await options.onEntry(requestId, response as ExtractedData);
           }
 
           if (options?.onFinish) {
-            options.onFinish(requestId, response as ExtractedData);
+            await options.onFinish(requestId, response as ExtractedData);
           }
         }
       } catch (error) {
         if (options?.onFinish) {
-          options.onFinish(requestId, undefined, error as Error);
+          await options.onFinish(requestId, undefined, error as Error);
         }
       } finally {
         this.requestMap.delete(requestId);
@@ -101,22 +101,22 @@ export class Generator {
         );
 
         if (options?.onStart) {
-          options.onStart(requestId);
+          await options.onStart(requestId);
         }
 
         let lastChunk: StreamResponse | undefined;
         for await (const chunk of (responseGen as () => AsyncGenerator<StreamResponse>)()) {
           lastChunk = chunk;
           if (options?.onEntry) {
-            options.onEntry(requestId, chunk);
+            await options.onEntry(requestId, chunk);
           }
         }
         if (options?.onFinish) {
-          options.onFinish(requestId, lastChunk);
+          await options.onFinish(requestId, lastChunk);
         }
       } catch (error) {
         if (options?.onFinish) {
-          options.onFinish(requestId, undefined, error as Error);
+          await options.onFinish(requestId, undefined, error as Error);
         }
       } finally {
         this.requestMap.delete(requestId);
