@@ -327,6 +327,27 @@ export async function sendChatMessage(
   }
 }
 
+export function st_setLocalVariable(name: string, value: unknown) {
+  if (!chat_metadata.variables) {
+    chat_metadata.variables = {};
+  }
+  chat_metadata.variables[name] = value;
+}
+
+export function st_getLocalVariable(name: string): unknown {
+  return chat_metadata?.variables?.[name];
+}
+
+export function st_setGlobalVariable(name: string, value: unknown) {
+  const context = SillyTavern.getContext();
+  context.extensionSettings.variables.global[name] = value;
+}
+
+export function st_getGlobalVariable(name: string): unknown {
+  const context = SillyTavern.getContext();
+  return context.extensionSettings.variables.global[name];
+}
+
 export {
   persona_description_positions,
   name1,

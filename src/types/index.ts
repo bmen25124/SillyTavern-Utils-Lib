@@ -245,6 +245,9 @@ export interface SillyTavernContext {
       auto_mode: AutoModeOptions;
     };
     regex?: RegexScriptData[];
+    variables: {
+      global: Record<string, any>;
+    };
   } & Record<string, any>;
   saveSettingsDebounced: () => void;
   callGenericPopup: (
