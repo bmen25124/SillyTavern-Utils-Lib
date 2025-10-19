@@ -318,8 +318,6 @@ export async function sendChatMessage(
 ): Promise<void> {
   if (role === 'user') {
     await sendMessageAsUser(message, null, insertAt, false, name ?? name1, user_avatar ?? avatar);
-    const context = SillyTavern.getContext();
-    context.eventSource.emit(EventNames.USER_MESSAGE_RENDERED, context.chat.length - 1);
   } else if (role === 'assistant') {
     const providedName = name ?? name2;
     const providedAvatar = avatar ?? SillyTavern.getContext().characters[this_chid].avatar;
