@@ -17,6 +17,7 @@ import {
   systemUserName,
   system_avatar,
   sendMessageAsUser,
+  updateMessageBlock
   // @ts-ignore
 } from '../../../../../script.js';
 
@@ -47,7 +48,7 @@ import {
 import { formatInstructModeExamples, formatInstructModeSystemPrompt } from '../../../../instruct-mode.js';
 
 // @ts-ignore
-import { appendFileContent } from '../../../../chats.js';
+import { appendFileContent, hideChatMessageRange } from '../../../../chats.js';
 
 import {
   getPromptRole,
@@ -85,7 +86,7 @@ import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
 import { InstructSettings } from './types/instruct.js';
 import { WIEntry } from './types/world-info.js';
 import { RegexScriptData } from './types/regex.js';
-import { EventNames } from './types/index.js';
+import { ChatMessage } from './types/index.js';
 
 export async function st_runCommandCallback(command: string, ...args: any[]): Promise<void> {
   // @ts-ignore
@@ -346,6 +347,14 @@ export function st_setGlobalVariable(name: string, value: unknown) {
 export function st_getGlobalVariable(name: string): unknown {
   const context = SillyTavern.getContext();
   return context.extensionSettings.variables.global[name];
+}
+
+export function st_updateMessageBlock(messageId: number, message: ChatMessage, { rerenderMessage = true } = {}): void {
+  updateMessageBlock(messageId, message, { rerenderMessage });
+}
+
+export async function st_hideChatMessageRange(start: number, end: number, unhide: boolean) {
+  await hideChatMessageRange(start, end, unhide);
 }
 
 export {

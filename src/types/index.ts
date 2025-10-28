@@ -217,6 +217,11 @@ export interface SlashCommandClosureResult {
 }
 
 export interface SillyTavernContext {
+  // Player
+  name1: string;
+  // Character
+  name2?: string;
+
   // Fuck commmand that types, I'll do it later.
   SlashCommandParser: any;
   SlashCommand: any;
