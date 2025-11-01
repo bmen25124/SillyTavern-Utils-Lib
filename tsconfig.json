@@ -17,8 +17,7 @@
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true,
-        "noEmit": false,
-        "emitDeclarationOnly": false,
+        "noEmit": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "outDir": "./dist",
@@ -32,5 +31,6 @@
         "node_modules",
         "dist",
         "**/*.test.ts"
-    ]
+    ],
+    "references": [{ "path": "./tsconfig.node.json" }]
 }

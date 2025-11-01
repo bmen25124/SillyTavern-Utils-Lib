@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef } from 'react';
 import Sortable, { SortableEvent } from 'sortablejs';
 import { STSelect } from './STSelect.js';
-import { DropdownItem } from '../fancy-dropdown.js';
+import { DropdownItem } from '../../fancy-dropdown.js';
 import { STButton } from './STButton.js';
 
 // --- Interfaces ---

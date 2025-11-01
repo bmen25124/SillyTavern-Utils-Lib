@@ -4,11 +4,7 @@ import { STSelect, STSelectProps } from './STSelect.js';
 import { STTextarea, STTextareaProps } from './STTextarea.js';
 
 import { Popup } from './Popup.js';
-import {
-  STConnectionProfileSelect,
-  STConnectionProfileSelectProps,
-  isProfileSupported,
-} from './ConnectionProfileSelect.js';
+import { STConnectionProfileSelect, STConnectionProfileSelectProps } from './ConnectionProfileSelect.js';
 import { PresetButtonDef, PresetItem, STPresetSelect, STPresetSelectProps } from './STPresetSelect.js';
 import {
   SortableListItemData,
@@ -26,7 +22,6 @@ export {
   STTextarea,
   Popup,
   STConnectionProfileSelect,
-  isProfileSupported,
   STPresetSelect,
   STSortableList,
   STSortableListItem,

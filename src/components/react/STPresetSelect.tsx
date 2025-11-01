@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useMemo } from 'react';
 import { STSelect, STButton } from './index.js';
-import { st_echo } from '../config.js';
+import { st_echo } from '../../config.js';
 
 const globalContext = SillyTavern.getContext();
 

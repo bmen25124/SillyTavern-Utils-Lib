@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from '../types/popup.js';
-import { dialogPolyfill, fixToastrForDialogs, removeFromArray, runAfterAnimation, STPopup } from '../config.js';
+import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from '../../types/popup.js';
+import { dialogPolyfill, fixToastrForDialogs, removeFromArray, runAfterAnimation, STPopup } from '../../config.js';
 
 interface PopupProps {
   content: React.ReactNode;
