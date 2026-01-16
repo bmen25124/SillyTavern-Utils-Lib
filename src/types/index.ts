@@ -7,6 +7,15 @@ import { WIEntry, WIPromptResult } from './world-info.js';
 import { ChatCompletionPreset, ChatCompletionSettings } from './chat-completion.js';
 import { TextCompletionPreset } from './text-completion.js';
 import { RegexScriptData } from './regex.js';
+import { LoDashStatic } from 'lodash';
+import LocalForage from 'localforage';
+import Fuse from 'fuse.js';
+import DOMPurify from 'dompurify';
+import Handlebars from 'handlebars';
+import moment from 'moment';
+import showdown from 'showdown';
+import hljs from 'highlight.js';
+import yaml from 'yaml';
 
 export enum EventNames {
   APP_READY = 'app_ready',
@@ -415,5 +424,16 @@ export interface SillyTavernContext {
 declare global {
   const SillyTavern: {
     getContext(): SillyTavernContext;
+    libs: {
+      lodash: LoDashStatic;
+      localforage: typeof LocalForage;
+      Fuse: typeof Fuse;
+      DOMPurify: typeof DOMPurify;
+      Handlebars: typeof Handlebars;
+      moment: typeof moment;
+      showdown: typeof showdown;
+      hljs: typeof hljs;
+      yaml: typeof yaml;
+    };
   };
 }
