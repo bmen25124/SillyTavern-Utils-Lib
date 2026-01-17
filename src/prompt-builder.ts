@@ -437,7 +437,7 @@ export async function buildPrompt(
 
     let promptOrder = preset.prompt_order?.find((prompt) => prompt.character_id === this_chid);
     if (!promptOrder && preset.prompt_order && preset.prompt_order.length > 0) {
-      promptOrder = preset.prompt_order[0];
+      promptOrder = preset.prompt_order[preset.prompt_order.length - 1];
     }
     if (!promptOrder) {
       console.warn(`No prompt order found for preset: ${presetName}. Using current preset.`);
