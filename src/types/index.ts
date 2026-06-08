@@ -126,6 +126,30 @@ export interface SendRequestParams {
   overridePayload?: Record<string, any>;
 }
 
+export interface SubstituteParamsOptions {
+  name1Override?: string;
+  name2Override?: string;
+  original?: string;
+  groupOverride?: string;
+  replaceCharacterCard?: boolean;
+  dynamicMacros?: Record<string, any>;
+  postProcessFn?: (x: string) => string;
+}
+
+export interface SubstituteParams {
+  (content: string, options?: SubstituteParamsOptions): string;
+  (
+    content: string,
+    _name1?: string,
+    _name2?: string,
+    _original?: string,
+    _group?: string,
+    _replaceCharacterCard?: boolean,
+    additionalMacro?: Record<string, any>,
+    postProcessFn?: (x: string) => string,
+  ): string;
+}
+
 export interface ChatMessage {
   name: string;
   mes: string;
@@ -394,16 +418,7 @@ export interface SillyTavernContext {
       preset_names: Record<string, number> | string[];
     };
   };
-  substituteParams: (
-    content: string,
-    _name1?: string,
-    _name2?: string,
-    _original?: string,
-    _group?: string,
-    _replaceCharacterCard?: boolean,
-    additionalMacro?: Record<string, any>,
-    postProcessFn?: (x: string) => string,
-  ) => string;
+  substituteParams: SubstituteParams;
   CONNECT_API_MAP: ConnectAPIMap;
   registerFunctionTool: (options: {
     name: string;
