@@ -34,6 +34,7 @@ import { InstructSettings } from './types/instruct.js';
 import { SyspromptSettings } from './types/sysprompt.js';
 import { TextCompletionPreset } from './types/text-completion.js';
 import { Tokenizer } from './tokenizer.js';
+import { getMessageText, sanitizePromptMessage, sanitizePromptMessages } from './prompt-message-utils.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
@@ -73,8 +74,9 @@ class TokenAwarePromptBuilder {
   }
 
   getTokenCount(message: Message): number {
-    if (!message.content) return 0;
-    return message.source?.extra?.token_count ?? this.tokenizer.encode(message.content).length;
+    const content = getMessageText(message);
+    if (!content) return 0;
+    return message.source?.extra?.token_count ?? this.tokenizer.encode(content).length;
   }
 
   canFit(message: Message): boolean {
@@ -82,7 +84,9 @@ class TokenAwarePromptBuilder {
   }
 
   add(message: Message): boolean {
-    if (!message.content) return true;
+    const normalizedMessage = sanitizePromptMessage(message);
+    if (!normalizedMessage) return true;
+    message = normalizedMessage;
     const tokenCount = this.getTokenCount(message);
     if (this.currentTokenCount + tokenCount > this.maxContext) {
       return false;
@@ -93,7 +97,9 @@ class TokenAwarePromptBuilder {
   }
 
   addFront(message: Message): boolean {
-    if (!message.content) return true;
+    const normalizedMessage = sanitizePromptMessage(message);
+    if (!normalizedMessage) return true;
+    message = normalizedMessage;
     const tokenCount = this.getTokenCount(message);
     if (this.currentTokenCount + tokenCount > this.maxContext) {
       return false;
@@ -104,7 +110,7 @@ class TokenAwarePromptBuilder {
   }
 
   addMany(messages: Message[]): boolean {
-    const validMessages = messages.filter((msg) => msg.content);
+    const validMessages = sanitizePromptMessages(messages);
     const tokenCounts = validMessages.map((msg) => this.getTokenCount(msg));
 
     // Check if all messages can fit
@@ -143,7 +149,9 @@ class TokenAwarePromptBuilder {
   }
 
   insert(index: number, message: Message): boolean {
-    if (!message.content) return true;
+    const normalizedMessage = sanitizePromptMessage(message);
+    if (!normalizedMessage) return true;
+    message = normalizedMessage;
     const tokenCount = this.getTokenCount(message);
     if (this.currentTokenCount + tokenCount > this.maxContext) {
       return false;
