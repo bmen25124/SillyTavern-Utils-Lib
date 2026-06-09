@@ -35,6 +35,7 @@ import { SyspromptSettings } from './types/sysprompt.js';
 import { TextCompletionPreset } from './types/text-completion.js';
 import { Tokenizer } from './tokenizer.js';
 import { getMessageText, sanitizePromptMessage, sanitizePromptMessages } from './prompt-message-utils.js';
+import { getMessageSliceBounds } from './prompt-slice-utils.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
@@ -258,8 +259,7 @@ export async function buildPrompt(
   const promptBuilder = new TokenAwarePromptBuilder(currentMaxContext);
 
   const canUseTools = context.ToolManager.isToolCallingSupported();
-  const startIndex = messageIndexesBetween?.start ?? 0;
-  const endIndex = messageIndexesBetween?.end ? messageIndexesBetween.end + 1 : undefined;
+  const { startIndex, endIndex } = getMessageSliceBounds(messageIndexesBetween);
   let coreChat =
     startIndex === -1 && endIndex === 0
       ? []

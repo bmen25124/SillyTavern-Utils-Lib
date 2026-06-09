@@ -1,4 +1,15 @@
 import { sanitizePromptMessages } from '../prompt-message-utils';
+import { getMessageSliceBounds } from '../prompt-slice-utils';
+
+describe('prompt builder message slicing', () => {
+  it('honors message index end zero', () => {
+    expect(getMessageSliceBounds({ end: 0 })).toEqual({ startIndex: 0, endIndex: 1 });
+  });
+
+  it('keeps end undefined when no end is requested', () => {
+    expect(getMessageSliceBounds()).toEqual({ startIndex: 0, endIndex: undefined });
+  });
+});
 
 describe('prompt builder message sanitization', () => {
   it('drops empty string messages', () => {
