@@ -1,5 +1,6 @@
 import { sanitizePromptMessages } from '../prompt-message-utils';
 import { getMessageSliceBounds } from '../prompt-slice-utils';
+import { createWorldInfoGlobalScanData } from '../world-info-scan-data';
 
 describe('prompt builder message slicing', () => {
   it('honors message index end zero', () => {
@@ -39,5 +40,19 @@ describe('prompt builder message sanitization', () => {
         content: [{ type: 'text', text: 'Hello' }],
       },
     ]);
+  });
+});
+
+describe('world info scan data', () => {
+  it('fills missing scan fields with SillyTavern-compatible defaults', () => {
+    expect(createWorldInfoGlobalScanData({ personaDescription: 'persona' })).toEqual({
+      personaDescription: 'persona',
+      characterDescription: '',
+      characterPersonality: '',
+      characterDepthPrompt: '',
+      scenario: '',
+      creatorNotes: '',
+      trigger: 'normal',
+    });
   });
 });

@@ -3,7 +3,7 @@ import { Message } from '../prompt-builder.js';
 import { POPUP_RESULT, POPUP_TYPE, PopupOptions } from './popup.js';
 import { AutoModeOptions } from './translate.js';
 import { ConnectionProfile } from './profiles.js';
-import { WIEntry, WIPromptResult } from './world-info.js';
+import { WIGlobalScanData, WIEntry, WIPromptResult } from './world-info.js';
 import { ChatCompletionPreset, ChatCompletionSettings } from './chat-completion.js';
 import { TextCompletionPreset } from './text-completion.js';
 import { RegexScriptData } from './regex.js';
@@ -329,7 +329,12 @@ export interface SillyTavernContext {
     prefer_character_prompt: boolean;
     request_token_probabilities: boolean;
   };
-  getWorldInfoPrompt: (chat: string[], maxContext: number, isDryRun: boolean) => Promise<WIPromptResult>;
+  getWorldInfoPrompt: (
+    chat: string[],
+    maxContext: number,
+    isDryRun: boolean,
+    globalScanData?: WIGlobalScanData,
+  ) => Promise<WIPromptResult>;
   saveWorldInfo: (name: string, data: { entries: Record<number, WIEntry> }, immediately?: boolean) => Promise<void>;
   loadWorldInfo: (worldName: string) => Promise<{ entries: Record<number, WIEntry>; name: string } | null>;
   reloadWorldInfoEditor: (file: string, loadIfNotSelected?: boolean) => void;

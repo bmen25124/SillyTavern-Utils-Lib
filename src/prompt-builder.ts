@@ -36,6 +36,7 @@ import { TextCompletionPreset } from './types/text-completion.js';
 import { Tokenizer } from './tokenizer.js';
 import { getMessageText, sanitizePromptMessage, sanitizePromptMessages } from './prompt-message-utils.js';
 import { getMessageSliceBounds } from './prompt-slice-utils.js';
+import { createWorldInfoGlobalScanData } from './world-info-scan-data.js';
 
 export interface Message extends ChatCompletionMessage {
   ignoreInstruct?: boolean;
@@ -290,9 +291,21 @@ export async function buildPrompt(
   );
 
   const chatForWI = coreChat.map((x) => (world_info_include_names ? `${x.name}: ${x.mes}` : x.mes)).reverse();
+  const characterId = targetCharacterId ?? this_chid;
+  const characterData = context.characters[characterId]?.data;
+  const characterDepthPrompt =
+    st_baseChatReplace(characterData?.extensions?.depth_prompt?.prompt?.trim(), name1, name2) || '';
+  const globalScanData = createWorldInfoGlobalScanData({
+    personaDescription: persona,
+    characterDescription: description,
+    characterPersonality: personality,
+    characterDepthPrompt,
+    scenario,
+    creatorNotes: characterData?.creator_notes ?? '',
+  });
   const { worldInfoString, worldInfoBefore, worldInfoAfter, worldInfoExamples, worldInfoDepth, anBefore, anAfter } =
     !ignoreWorldInfo
-      ? await context.getWorldInfoPrompt(chatForWI, currentMaxContext, false)
+      ? await context.getWorldInfoPrompt(chatForWI, currentMaxContext, false, globalScanData)
       : {
           worldInfoString: '',
           worldInfoBefore: '',

@@ -1,3 +1,13 @@
+export interface WIGlobalScanData {
+  personaDescription: string;
+  characterDescription: string;
+  characterPersonality: string;
+  characterDepthPrompt: string;
+  scenario: string;
+  creatorNotes: string;
+  trigger: string;
+}
+
 export interface WIPromptResult {
   worldInfoString: string;
   worldInfoBefore: string;
